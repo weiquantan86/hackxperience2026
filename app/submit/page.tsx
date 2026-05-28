@@ -391,7 +391,7 @@ function StepRail({ active, onStepClick, maxReached, lastSaved }: {
     <div style={{ width: 200, flexShrink: 0, display: "flex", flexDirection: "column" }}>
       {STEPS.map(([n, label, sub], i) => {
         const isA = i === active;
-        const isD = i < active;
+        const isD = i !== active && i <= maxReached;
         const isClickable = i <= maxReached;
         return (
           <motion.div
