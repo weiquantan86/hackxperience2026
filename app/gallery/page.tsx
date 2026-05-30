@@ -4,9 +4,10 @@ import React, { useState, useEffect, useMemo } from 'react';
 import Navbar from '../components/navbar';
 import Footer from '../components/footer';
 import { mockProjects, Project } from '../../lib/mock-data';
+import { supabaseBrowser } from '../../lib/supabase-browser';
 import { IBM_Plex_Mono, Montserrat } from "next/font/google";
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, ChevronLeft, ChevronRight, Trophy, Medal, Star } from 'lucide-react';
+import { Search, ChevronLeft, ChevronRight, Trophy, Medal, Star, Loader2 } from 'lucide-react';
 
 const ibmPlexMono = IBM_Plex_Mono({
   subsets: ["latin"],
@@ -35,7 +36,11 @@ const RankBadge = ({ rank, size = 'sm' }: { rank: Project['rank'], size?: 'sm' |
     SPECIAL_MENTION: { label: 'SPECIAL_MENTION', color: '#1d1c17', icon: Star },
   };
 
-  const { label, color, icon: Icon } = config[rank];
+  // Safe access for dynamic ranks
+  const rankKey = rank as keyof typeof config;
+  if (!config[rankKey]) return null;
+
+  const { label, color, icon: Icon } = config[rankKey];
 
   if (size === 'lg') {
     return (
@@ -58,14 +63,61 @@ const RankBadge = ({ rank, size = 'sm' }: { rank: Project['rank'], size?: 'sm' |
 };
 
 export default function GalleryPage() {
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [loading, setLoading] = useState(true);
   const [activeYear, setActiveYear] = useState<'ALL' | '2025' | '2024'>('ALL');
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
 
+  // Fetch Projects from Supabase
+  useEffect(() => {
+    async function fetchProjects() {
+      try {
+        setLoading(true);
+        const { data, error } = await supabaseBrowser
+          .from('submissions')
+          .select('*')
+          .eq('status', 'APPROVED');
+
+        if (error) throw error;
+
+        if (data && data.length > 0) {
+          const mappedProjects: Project[] = data.map(item => ({
+            id: item.id,
+            title: item.project_name,
+            description: item.description,
+            longDescription: item.pitch,
+            image: item.thumbnail_url || '/next.svg',
+            year: item.year || '2025', // Fallback to current year if not present
+            teamName: item.team_id,
+            tags: item.tech_stack || [],
+            links: {
+              github: item.github_url,
+              demo: item.live_url
+            },
+            rank: item.rank || null,
+            createdAt: item.submitted_at
+          }));
+          setProjects(mappedProjects);
+        } else {
+          // If no data in DB, set projects to empty array
+          setProjects([]);
+        }
+      } catch (err) {
+        console.error('Error fetching projects:', err);
+        setProjects([]); // Fallback to empty on error
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchProjects();
+  }, []);
+
   // Filter and Sort Projects (Alphabetical by default)
   const processedProjects = useMemo(() => {
-    let result = [...mockProjects];
+    let result = [...projects];
 
     // Filter by Year
     if (activeYear !== 'ALL') {
@@ -86,7 +138,7 @@ export default function GalleryPage() {
     result.sort((a, b) => a.title.localeCompare(b.title));
 
     return result;
-  }, [activeYear, searchQuery]);
+  }, [projects, activeYear, searchQuery]);
 
   // Pagination Logic
   const totalPages = Math.ceil(processedProjects.length / ITEMS_PER_PAGE);
@@ -166,7 +218,12 @@ export default function GalleryPage() {
 
       {/* Projects Grid */}
       <section className="max-w-7xl mx-auto py-12 px-6 min-h-[60vh]">
-        {paginatedProjects.length > 0 ? (
+        {loading ? (
+          <div className="flex flex-col items-center justify-center py-20">
+            <Loader2 className="w-12 h-12 text-[#c00000] animate-spin mb-4" />
+            <p className="font-mono text-sm font-bold uppercase text-[#1d1c17]/40">INITIALIZING_DATABASE_LINK...</p>
+          </div>
+        ) : paginatedProjects.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
             <AnimatePresence mode='popLayout'>
               {paginatedProjects.map((project) => (
@@ -245,13 +302,17 @@ export default function GalleryPage() {
         ) : (
           <div className="flex flex-col items-center justify-center py-20 border-4 border-dashed border-[#1d1c17]/20">
             <Search className="w-12 h-12 text-[#1d1c17]/20 mb-4" />
-            <h3 className="text-xl font-black uppercase text-[#1d1c17]/40">NO_MATCHING_RECORDS_FOUND</h3>
-            <button 
-              onClick={() => {setSearchQuery(''); setActiveYear('ALL');}}
-              className="mt-4 text-[#c00000] font-mono text-xs font-bold underline underline-offset-4"
-            >
-              RESET_ALL_FILTERS
-            </button>
+            <h3 className="text-xl font-black uppercase text-[#1d1c17]/40">
+              {projects.length === 0 ? 'NO_PROJECTS_HAVE_BEEN_ADDED_YET' : 'NO_MATCHING_RECORDS_FOUND'}
+            </h3>
+            {projects.length > 0 && (
+              <button 
+                onClick={() => {setSearchQuery(''); setActiveYear('ALL');}}
+                className="mt-4 text-[#c00000] font-mono text-xs font-bold underline underline-offset-4"
+              >
+                RESET_ALL_FILTERS
+              </button>
+            )}
           </div>
         )}
 
