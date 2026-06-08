@@ -100,11 +100,22 @@ function serializeForm(form: FormState): SerializableForm {
 }
 
 function deserializeForm(stored: SerializableForm): FormState {
-  return { ...stored, pitchDeckFile: null, thumbnailFile: null };
+  // Migrate drafts/DB responses that still use the old field names from before the rename
+  const s = stored as SerializableForm & Record<string, unknown>;
+  return {
+    ...stored,
+    githubRepoUrl:      (s.githubRepoUrl      ?? s.githubUrl      ?? "") as string,
+    liveDemoUrl:        (s.liveDemoUrl         ?? s.liveUrl        ?? "") as string,
+    pitchDeckShareUrl:  (s.pitchDeckShareUrl   ?? s.pitchDeckUrl   ?? "") as string,
+    pitchDeckUploadUrl: (s.pitchDeckUploadUrl  ?? s.pitchDeckFileUrl ?? null) as string | null,
+    demoVideoUrl:       (s.demoVideoUrl        ?? "") as string,
+    pitchDeckFile: null,
+    thumbnailFile: null,
+  };
 }
 
 function isValidUrl(url: string): boolean {
-  if (!url.trim()) return false;
+  if (!url?.trim()) return false;
   try { new URL(url); return true; } catch { return false; }
 }
 
