@@ -28,7 +28,7 @@ export type AdminSettingsRow = {
 };
 
 export type AdminJudge = {
-  id: number;
+  id: string;
   username: string;
 };
 
@@ -107,8 +107,8 @@ export async function createAdminJudge(payload: { username: string; password: st
   return handleResponse<{ judge: AdminJudge }>(response, "Unable to create judge.");
 }
 
-export async function updateAdminJudge(id: number, payload: { username?: string; password?: string }) {
-  const response = await fetch(`/api/admin/judges/${id}`, {
+export async function updateAdminJudge(id: string, payload: { username?: string; password?: string }) {
+  const response = await fetch(`/api/admin/judges/${encodeURIComponent(id)}`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
@@ -116,7 +116,7 @@ export async function updateAdminJudge(id: number, payload: { username?: string;
   return handleResponse<{ judge: AdminJudge }>(response, "Unable to update judge.");
 }
 
-export async function deleteAdminJudge(id: number) {
-  const response = await fetch(`/api/admin/judges/${id}`, { method: "DELETE" });
+export async function deleteAdminJudge(id: string) {
+  const response = await fetch(`/api/admin/judges/${encodeURIComponent(id)}`, { method: "DELETE" });
   return handleResponse<{ ok: boolean }>(response, "Unable to delete judge.");
 }

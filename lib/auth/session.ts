@@ -4,9 +4,10 @@ export const PORTAL_SESSION_COOKIE = "hx_portal_session";
 export const PORTAL_SESSION_TTL_SECONDS = 60 * 60 * 8; // 8 hours
 
 export type PortalRole = "admin" | "judge";
+export type PortalUserId = number | string;
 
 export type PortalSession = {
-  userId: number;
+  userId: PortalUserId;
   username: string;
   role: PortalRole;
   iat: number;
@@ -36,6 +37,12 @@ function isPortalRole(role: unknown): role is PortalRole {
   return role === "admin" || role === "judge";
 }
 
+function isPortalUserId(value: unknown): value is PortalUserId {
+  if (typeof value === "number") return Number.isFinite(value);
+  if (typeof value === "string") return value.trim().length > 0;
+  return false;
+}
+
 function sign(payloadB64: string) {
   return createHmac("sha256", sessionSecret()).update(payloadB64).digest("base64url");
 }
@@ -45,7 +52,7 @@ export function buildSessionToken({
   username,
   role,
 }: {
-  userId: number;
+  userId: PortalUserId;
   username: string;
   role: PortalRole;
 }) {
@@ -74,7 +81,7 @@ export function parseSessionToken(token: string | null | undefined): PortalSessi
 
   const candidate = parsed as Partial<PortalSession>;
   if (
-    typeof candidate.userId !== "number" ||
+    !isPortalUserId(candidate.userId) ||
     typeof candidate.username !== "string" ||
     !isPortalRole(candidate.role) ||
     typeof candidate.iat !== "number" ||

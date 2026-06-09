@@ -280,7 +280,7 @@ function AdminSessionPanel({
   );
 }
 
-type EditingState = { id: number; username: string } | null;
+type EditingState = { id: string; username: string } | null;
 type AddingState = { username: string; password: string } | null;
 
 function JudgeAccountsPanel({
@@ -291,8 +291,8 @@ function JudgeAccountsPanel({
 }: {
   judges: AdminJudge[];
   onCreate: (payload: { username: string; password: string }) => Promise<void>;
-  onUpdate: (id: number, payload: { username?: string; password?: string }) => Promise<void>;
-  onDelete: (id: number) => Promise<void>;
+  onUpdate: (id: string, payload: { username?: string; password?: string }) => Promise<void>;
+  onDelete: (id: string) => Promise<void>;
 }) {
   const [editing, setEditing] = useState<EditingState>(null);
   const [adding, setAdding] = useState<AddingState>(null);
@@ -581,7 +581,7 @@ export default function SettingsClient() {
     }
   }, []);
 
-  const handleUpdateJudge = useCallback(async (id: number, payload: { username?: string; password?: string }) => {
+  const handleUpdateJudge = useCallback(async (id: string, payload: { username?: string; password?: string }) => {
     setError("");
     try {
       const response = await updateAdminJudge(id, payload);
@@ -593,7 +593,7 @@ export default function SettingsClient() {
     }
   }, []);
 
-  const handleDeleteJudge = useCallback(async (id: number) => {
+  const handleDeleteJudge = useCallback(async (id: string) => {
     setError("");
     try {
       await deleteAdminJudge(id);

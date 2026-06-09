@@ -1,7 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireRole } from "@/lib/auth/route-guard";
 import { supabaseServer } from "@/lib/supabase-server";
-import { mapSubmissionToAdminView, totalScore, type JudgeScoreRow } from "@/lib/server/portal-data";
+import {
+  mapSubmissionToAdminView,
+  totalScore,
+  type JudgeIdentifier,
+  type JudgeScoreRow,
+} from "@/lib/server/portal-data";
 import { usernameFromSupabaseEmail } from "@/lib/auth/portal-identity";
 import type { SubmissionRow } from "@/lib/types";
 
@@ -18,6 +23,11 @@ type AuthUserListItem = {
 
 const AUTH_PER_PAGE = 200;
 const AUTH_MAX_PAGES = 25;
+const JUDGE_ROLE = "JUDGE";
+
+function normalizeJudgeKey(id: JudgeIdentifier) {
+  return String(id);
+}
 
 function isMissingTableError(error: { code?: string; message?: string } | null | undefined) {
   if (!error) return false;
@@ -62,7 +72,7 @@ export async function GET(request: NextRequest) {
     supabaseServer
       .from("user_roles")
       .select("id,user_id,role")
-      .eq("role", "judge")
+      .ilike("role", JUDGE_ROLE)
       .order("id", { ascending: true }),
   ]);
 
@@ -83,24 +93,24 @@ export async function GET(request: NextRequest) {
     scoreRowsBySubmission.set(row.submission_id, bucket);
   }
 
-  let judgeLookup: Array<{ id: number; judgeId: string }> = [];
+  let judgeLookup: Array<{ id: JudgeIdentifier; key: string; judgeId: string }> = [];
   if (!judgeRolesResult.error) {
     try {
       const authUsers = await listAuthUsersById();
       judgeLookup = ((judgeRolesResult.data ?? []) as JudgeRoleRow[])
         .map((roleRow) => {
-          const id = Number(roleRow.id);
-          if (!Number.isFinite(id)) return null;
+          const id = typeof roleRow.id === "string" ? roleRow.id.trim() : roleRow.id;
+          if (id === "" || id === null || id === undefined) return null;
 
           const authUser = authUsers.get(roleRow.user_id);
           const username =
             usernameFromSupabaseEmail(authUser?.email) ||
             authUser?.email ||
-            `judge_${id}`;
+            `judge_${String(id)}`;
 
-          return { id, judgeId: username };
+          return { id, key: normalizeJudgeKey(id), judgeId: username };
         })
-        .filter((entry): entry is { id: number; judgeId: string } => Boolean(entry));
+        .filter((entry): entry is { id: JudgeIdentifier; key: string; judgeId: string } => Boolean(entry));
     } catch (authError) {
       return NextResponse.json(
         { error: authError instanceof Error ? authError.message : "Unable to load auth users." },
@@ -112,15 +122,23 @@ export async function GET(request: NextRequest) {
   }
 
   const legacyJudgeIds = Array.from(new Set(scoreRows.map((row) => row.judges_id)))
-    .filter((judgeId) => !judgeLookup.some((judge) => judge.id === judgeId));
+    .filter((judgeId) => !judgeLookup.some((judge) => judge.key === normalizeJudgeKey(judgeId)));
 
   const judgeColumns =
     judgeLookup.length > 0
       ? [
           ...judgeLookup,
-          ...legacyJudgeIds.map((judgeId) => ({ id: judgeId, judgeId: String(judgeId) })),
+          ...legacyJudgeIds.map((judgeId) => ({
+            id: judgeId,
+            key: normalizeJudgeKey(judgeId),
+            judgeId: String(judgeId),
+          })),
         ]
-      : legacyJudgeIds.map((judgeId) => ({ id: judgeId, judgeId: String(judgeId) }));
+      : legacyJudgeIds.map((judgeId) => ({
+          id: judgeId,
+          key: normalizeJudgeKey(judgeId),
+          judgeId: String(judgeId),
+        }));
 
   const judgeIds = judgeColumns.map((judge) => judge.judgeId);
 
@@ -130,7 +148,9 @@ export async function GET(request: NextRequest) {
     const scores =
       judgeColumns.length > 0
         ? judgeColumns.map((judge) => {
-            const row = rows.find((candidate) => candidate.judges_id === judge.id);
+            const row = rows.find(
+              (candidate) => normalizeJudgeKey(candidate.judges_id) === judge.key,
+            );
             return { judgeId: judge.judgeId, score: totalScore(row) };
           })
         : rows.map((row) => ({

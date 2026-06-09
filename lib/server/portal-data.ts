@@ -10,13 +10,15 @@ import type {
   TeamMember,
 } from "@/lib/types";
 
+export type JudgeIdentifier = number | string;
+
 export type JudgeRow = {
-  id: number;
+  id: JudgeIdentifier;
   username: string;
 };
 
 export type JudgeScoreRow = {
-  judges_id: number;
+  judges_id: JudgeIdentifier;
   submission_id: string;
   technical_execution: number | null;
   problem_solution_fit: number | null;

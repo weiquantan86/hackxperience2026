@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireRole } from "@/lib/auth/route-guard";
+import { verifyRoleMapping } from "@/lib/auth/role-mapping";
 import { supabaseServer } from "@/lib/supabase-server";
 import { mapSubmissionToJudgeProject, totalScore, type JudgeScoreRow } from "@/lib/server/portal-data";
 import type { SubmissionRow } from "@/lib/types";
@@ -16,6 +17,14 @@ type JudgeSavedScore = {
 export async function GET(request: NextRequest) {
   const auth = requireRole(request, "judge");
   if (!auth.ok) return auth.response;
+
+  const roleCheck = await verifyRoleMapping({
+    userRoleId: auth.session.userId,
+    expectedRole: "judge",
+  });
+  if (!roleCheck.ok) {
+    return NextResponse.json({ error: roleCheck.error }, { status: roleCheck.status });
+  }
 
   const [submissionsResult, scoresResult, settingsResult] = await Promise.all([
     supabaseServer

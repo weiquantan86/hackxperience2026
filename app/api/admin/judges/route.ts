@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireRole } from "@/lib/auth/route-guard";
+import { verifyRoleMapping } from "@/lib/auth/role-mapping";
 import { supabaseServer } from "@/lib/supabase-server";
 import {
+  DUMMY_AUTH_DOMAIN,
   normalizePortalUsername,
-  toSupabaseAuthEmail,
   usernameFromSupabaseEmail,
 } from "@/lib/auth/portal-identity";
 
@@ -17,6 +18,14 @@ type AuthUserListItem = {
   id: string;
   email?: string | null;
 };
+
+const JUDGE_ROLE = "JUDGE";
+
+function normalizeRoleRowId(value: unknown) {
+  if (typeof value === "number") return Number.isFinite(value) ? String(value) : "";
+  if (typeof value === "string") return value.trim();
+  return "";
+}
 
 function isAuthDuplicateError(message: string | undefined) {
   const normalized = message?.toLowerCase() ?? "";
@@ -52,10 +61,18 @@ export async function GET(request: NextRequest) {
   const auth = requireRole(request, "admin");
   if (!auth.ok) return auth.response;
 
+  const roleCheck = await verifyRoleMapping({
+    userRoleId: auth.session.userId,
+    expectedRole: "admin",
+  });
+  if (!roleCheck.ok) {
+    return NextResponse.json({ error: roleCheck.error }, { status: roleCheck.status });
+  }
+
   const { data, error } = await supabaseServer
     .from("user_roles")
     .select("id,user_id,role")
-    .eq("role", "judge")
+    .ilike("role", JUDGE_ROLE)
     .order("id", { ascending: true });
 
   if (error) {
@@ -74,8 +91,8 @@ export async function GET(request: NextRequest) {
 
   const judges = ((data ?? []) as JudgeRoleRow[])
     .map((judgeRow) => {
-      const id = Number(judgeRow.id);
-      if (!Number.isFinite(id)) return null;
+      const id = normalizeRoleRowId(judgeRow.id);
+      if (!id) return null;
 
       const authUser = authUsers.get(judgeRow.user_id);
       const username =
@@ -85,7 +102,7 @@ export async function GET(request: NextRequest) {
 
       return { id, username };
     })
-    .filter((entry): entry is { id: number; username: string } => Boolean(entry));
+    .filter((entry): entry is { id: string; username: string } => Boolean(entry));
 
   return NextResponse.json({ judges });
 }
@@ -93,6 +110,14 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   const auth = requireRole(request, "admin");
   if (!auth.ok) return auth.response;
+
+  const roleCheck = await verifyRoleMapping({
+    userRoleId: auth.session.userId,
+    expectedRole: "admin",
+  });
+  if (!roleCheck.ok) {
+    return NextResponse.json({ error: roleCheck.error }, { status: roleCheck.status });
+  }
 
   const body = await request.json().catch(() => null);
   const username = normalizePortalUsername(body?.username);
@@ -102,7 +127,11 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Username and password are required." }, { status: 400 });
   }
 
-  const authEmail = toSupabaseAuthEmail(username);
+  if (username.includes("@")) {
+    return NextResponse.json({ error: "Use username only (without @domain)." }, { status: 400 });
+  }
+
+  const authEmail = `${username}@${DUMMY_AUTH_DOMAIN}`;
 
   const { data: authUserData, error: authCreateError } = await supabaseServer.auth.admin.createUser({
     email: authEmail,
@@ -123,7 +152,7 @@ export async function POST(request: NextRequest) {
   const authUserId = authUserData.user.id;
   const { data: roleRow, error: roleError } = await supabaseServer
     .from("user_roles")
-    .insert({ user_id: authUserId, role: "judge" })
+    .insert({ user_id: authUserId, role: JUDGE_ROLE })
     .select("id")
     .single<{ id: number | string }>();
 
@@ -132,11 +161,11 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: roleError.message }, { status: 500 });
   }
 
-  const judgeId = Number(roleRow?.id ?? Number.NaN);
-  if (!Number.isFinite(judgeId)) {
+  const judgeId = normalizeRoleRowId(roleRow?.id);
+  if (!judgeId) {
     // Cleanup to avoid orphaned role if we cannot produce a stable ID for the UI.
     await Promise.all([
-      supabaseServer.from("user_roles").delete().eq("user_id", authUserId).eq("role", "judge"),
+      supabaseServer.from("user_roles").delete().eq("user_id", authUserId).ilike("role", JUDGE_ROLE),
       supabaseServer.auth.admin.deleteUser(authUserId),
     ]);
     return NextResponse.json({ error: "Unable to resolve judge identifier." }, { status: 500 });

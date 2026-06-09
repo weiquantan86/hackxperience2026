@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireRole } from "@/lib/auth/route-guard";
+import { verifyRoleMapping } from "@/lib/auth/role-mapping";
 import { supabaseServer } from "@/lib/supabase-server";
 import { totalScore, type JudgeScoreRow } from "@/lib/server/portal-data";
 
@@ -24,6 +25,14 @@ function parseCriterion(value: unknown, max: number): number | null | "invalid" 
 export async function PUT(request: NextRequest, { params }: RouteContext) {
   const auth = requireRole(request, "judge");
   if (!auth.ok) return auth.response;
+
+  const roleCheck = await verifyRoleMapping({
+    userRoleId: auth.session.userId,
+    expectedRole: "judge",
+  });
+  if (!roleCheck.ok) {
+    return NextResponse.json({ error: roleCheck.error }, { status: roleCheck.status });
+  }
 
   const { submissionId } = await params;
   const body = await request.json().catch(() => null);

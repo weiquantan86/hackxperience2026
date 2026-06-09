@@ -18,6 +18,8 @@ type AuthUserListItem = {
   email?: string | null;
 };
 
+const JUDGE_ROLE = "JUDGE";
+
 const AUTH_PER_PAGE = 200;
 const AUTH_MAX_PAGES = 25;
 
@@ -53,12 +55,27 @@ async function findAuthUserById(userId: string): Promise<AuthUserListItem | null
   return null;
 }
 
-async function findJudgeRoleById(id: number) {
+function normalizeRoleRowId(value: unknown) {
+  if (typeof value === "number") return Number.isFinite(value) ? String(value) : "";
+  if (typeof value === "string") return value.trim();
+  return "";
+}
+
+function toDatabaseRoleId(id: string): string | number {
+  if (/^\d+$/.test(id)) {
+    const asNumber = Number(id);
+    if (Number.isSafeInteger(asNumber)) return asNumber;
+  }
+  return id;
+}
+
+async function findJudgeRoleById(id: string) {
+  const lookupId = toDatabaseRoleId(id);
   return supabaseServer
     .from("user_roles")
     .select("id,user_id,role")
-    .eq("id", id)
-    .eq("role", "judge")
+    .eq("id", lookupId)
+    .ilike("role", JUDGE_ROLE)
     .maybeSingle<JudgeRoleRow>();
 }
 
@@ -67,8 +84,8 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
   if (!auth.ok) return auth.response;
 
   const { id } = await params;
-  const judgeId = Number(id);
-  if (!Number.isInteger(judgeId)) {
+  const judgeId = normalizeRoleRowId(id);
+  if (!judgeId) {
     return NextResponse.json({ error: "Invalid judge id." }, { status: 400 });
   }
 
@@ -120,8 +137,8 @@ export async function DELETE(request: NextRequest, { params }: RouteContext) {
   if (!auth.ok) return auth.response;
 
   const { id } = await params;
-  const judgeId = Number(id);
-  if (!Number.isInteger(judgeId)) {
+  const judgeId = normalizeRoleRowId(id);
+  if (!judgeId) {
     return NextResponse.json({ error: "Invalid judge id." }, { status: 400 });
   }
 
@@ -141,8 +158,8 @@ export async function DELETE(request: NextRequest, { params }: RouteContext) {
   const { error: roleDeleteError } = await supabaseServer
     .from("user_roles")
     .delete()
-    .eq("id", judgeId)
-    .eq("role", "judge");
+    .eq("id", toDatabaseRoleId(judgeId))
+    .ilike("role", JUDGE_ROLE);
 
   if (roleDeleteError) {
     return NextResponse.json({ error: roleDeleteError.message }, { status: 500 });
@@ -151,7 +168,7 @@ export async function DELETE(request: NextRequest, { params }: RouteContext) {
   const scoreDelete = await supabaseServer
     .from("judges_scores")
     .delete()
-    .eq("judges_id", judgeId);
+    .eq("judges_id", toDatabaseRoleId(judgeId));
 
   if (scoreDelete.error && !isMissingTableError(scoreDelete.error)) {
     return NextResponse.json({ error: scoreDelete.error.message }, { status: 500 });

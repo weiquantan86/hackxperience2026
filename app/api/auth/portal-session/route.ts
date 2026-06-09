@@ -5,6 +5,7 @@ import {
   PORTAL_SESSION_COOKIE,
   sessionCookieOptions,
   type PortalRole,
+  type PortalUserId,
 } from "@/lib/auth/session";
 import { normalizePortalUsername, usernameFromSupabaseEmail } from "@/lib/auth/portal-identity";
 
@@ -17,6 +18,24 @@ function normalizeRole(value: unknown): PortalRole | null {
   if (typeof value !== "string") return null;
   const role = value.trim().toLowerCase();
   if (role === "admin" || role === "judge") return role;
+  return null;
+}
+
+function normalizeRoleRowId(value: unknown): PortalUserId | null {
+  if (typeof value === "number") {
+    return Number.isFinite(value) ? value : null;
+  }
+
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    if (!trimmed) return null;
+    if (/^\d+$/.test(trimmed)) {
+      const asNumber = Number(trimmed);
+      if (Number.isSafeInteger(asNumber)) return asNumber;
+    }
+    return trimmed;
+  }
+
   return null;
 }
 
@@ -53,11 +72,10 @@ export async function POST(request: NextRequest) {
 
   const derivedFromEmail = usernameFromSupabaseEmail(authUser.user.email);
   const portalUsername = requestedUsername || derivedFromEmail || authUser.user.id;
-  const numericRoleId = Number(matchedRole.id);
-  if (!Number.isFinite(numericRoleId)) {
+  const portalUserId = normalizeRoleRowId(matchedRole.id);
+  if (!portalUserId) {
     return NextResponse.json({ error: "Invalid role mapping for this account." }, { status: 500 });
   }
-  const portalUserId = numericRoleId;
 
   const portalToken = buildSessionToken({
     userId: portalUserId,
