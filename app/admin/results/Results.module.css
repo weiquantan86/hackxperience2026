@@ -74,9 +74,10 @@
 }
 
 .tableGrid {
+  --judge-count: 1;
   min-width: 880px;
   display: grid;
-  grid-template-columns: minmax(280px, 1.45fr) repeat(3, minmax(150px, 1fr)) minmax(170px, 1fr);
+  grid-template-columns: minmax(280px, 1.45fr) repeat(var(--judge-count), minmax(150px, 1fr)) minmax(170px, 1fr);
   align-items: stretch;
 }
 
@@ -130,6 +131,7 @@
 
 .averageCell {
   color: #cc0000;
+  gap: 3px;
 }
 
 .averageSuffix {

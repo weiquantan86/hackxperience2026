@@ -2,6 +2,7 @@
 
 import { Download } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import type { CSSProperties } from "react";
 import { AdminShellConfig, type AdminMetric } from "../components/AdminShell";
 import type { AdminSubmission } from "@/lib/types";
 import { fetchAdminSubmissions } from "@/lib/client/admin-api";
@@ -74,6 +75,21 @@ function scoreLabel(score: number | null) {
   return typeof score === "number" ? `${score}/100` : "-";
 }
 
+function sortByAverageDesc(submissions: AdminSubmission[]) {
+  return [...submissions].sort((left, right) => {
+    const leftAverage = scoredAverage(left);
+    const rightAverage = scoredAverage(right);
+
+    if (leftAverage === null && rightAverage === null) {
+      return left.projectName.localeCompare(right.projectName);
+    }
+    if (leftAverage === null) return 1;
+    if (rightAverage === null) return -1;
+    if (rightAverage !== leftAverage) return rightAverage - leftAverage;
+    return left.projectName.localeCompare(right.projectName);
+  });
+}
+
 function escapeCsv(value: string) {
   return `"${value.replace(/"/g, '""')}"`;
 }
@@ -99,6 +115,8 @@ export default function ResultsClient() {
   const [error, setError] = useState("");
   const [exportState, setExportState] = useState("");
   const shellMetrics = useMemo(() => buildMetrics(data), [data]);
+  const sortedData = useMemo(() => sortByAverageDesc(data), [data]);
+  const judgeColumnCount = Math.max(judgeIds.length, 1);
 
   const loadResults = useCallback(async () => {
     setLoading(true);
@@ -119,7 +137,7 @@ export default function ResultsClient() {
   }, [loadResults]);
 
   function exportScoresCsv() {
-    const csv = buildCsv(data, judgeIds);
+    const csv = buildCsv(sortedData, judgeIds);
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
@@ -147,16 +165,27 @@ export default function ResultsClient() {
       </header>
 
       <section className={styles.tablePanel}>
-        <div className={styles.tableGrid}>
+        <div
+          className={styles.tableGrid}
+          style={
+            {
+              "--judge-count": String(judgeColumnCount),
+            } as CSSProperties
+          }
+        >
           <div className={styles.tableHead}>PROJECT</div>
-          {judgeIds.map((judgeId) => (
-            <div className={styles.tableHead} key={judgeId}>
-              {judgeId.toUpperCase()}
-            </div>
-          ))}
+          {judgeIds.length > 0 ? (
+            judgeIds.map((judgeId) => (
+              <div className={styles.tableHead} key={judgeId}>
+                {judgeId.toUpperCase()}
+              </div>
+            ))
+          ) : (
+            <div className={styles.tableHead}>NO_JUDGES</div>
+          )}
           <div className={styles.tableHead}>AVERAGE_SCORE</div>
 
-          {data.map((submission) => {
+          {sortedData.map((submission) => {
             const average = scoredAverage(submission);
 
             return (
@@ -165,11 +194,17 @@ export default function ResultsClient() {
                   <span className={styles.projectName}>{submission.projectName}</span>
                   <span className={styles.teamName}>{submission.teamName}</span>
                 </div>
-                {judgeIds.map((judgeId) => (
-                  <div className={styles.tableCell} key={judgeId} data-label={judgeId}>
-                    {scoreLabel(scoreFor(submission, judgeId))}
+                {judgeIds.length > 0 ? (
+                  judgeIds.map((judgeId) => (
+                    <div className={styles.tableCell} key={judgeId} data-label={judgeId}>
+                      {scoreLabel(scoreFor(submission, judgeId))}
+                    </div>
+                  ))
+                ) : (
+                  <div className={styles.tableCell} data-label="NO_JUDGES">
+                    -
                   </div>
-                ))}
+                )}
                 <div className={`${styles.tableCell} ${styles.averageCell}`} data-label="AVERAGE_SCORE">
                   {typeof average === "number" ? (
                     <>
@@ -183,6 +218,23 @@ export default function ResultsClient() {
               </div>
             );
           })}
+
+          {sortedData.length === 0 ? (
+            <div className={styles.tableRow}>
+              <div className={`${styles.tableCell} ${styles.projectCell}`} data-label="PROJECT">
+                <span className={styles.projectName}>NO PROJECTS YET</span>
+                <span className={styles.teamName}>Scores will appear here once submissions are reviewed.</span>
+              </div>
+              {Array.from({ length: judgeColumnCount }, (_, idx) => (
+                <div className={styles.tableCell} key={`empty-${idx}`} data-label={judgeIds[idx] ?? "NO_JUDGES"}>
+                  -
+                </div>
+              ))}
+              <div className={`${styles.tableCell} ${styles.averageCell}`} data-label="AVERAGE_SCORE">
+                -
+              </div>
+            </div>
+          ) : null}
         </div>
       </section>
 
