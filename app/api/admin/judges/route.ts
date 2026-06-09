@@ -7,6 +7,7 @@ import {
   normalizePortalUsername,
   usernameFromSupabaseEmail,
 } from "@/lib/auth/portal-identity";
+import { resolveLegacyJudgeId } from "@/lib/server/judge-scores";
 
 type JudgeRoleRow = {
   id: number | string;
@@ -169,6 +170,24 @@ export async function POST(request: NextRequest) {
       supabaseServer.auth.admin.deleteUser(authUserId),
     ]);
     return NextResponse.json({ error: "Unable to resolve judge identifier." }, { status: 500 });
+  }
+
+  try {
+    await resolveLegacyJudgeId(username, { createIfMissing: true });
+  } catch (legacyJudgeError) {
+    await Promise.all([
+      supabaseServer.from("user_roles").delete().eq("user_id", authUserId).ilike("role", JUDGE_ROLE),
+      supabaseServer.auth.admin.deleteUser(authUserId),
+    ]);
+    return NextResponse.json(
+      {
+        error:
+          legacyJudgeError instanceof Error
+            ? legacyJudgeError.message
+            : "Unable to create legacy judge mapping.",
+      },
+      { status: 500 },
+    );
   }
 
   return NextResponse.json({ judge: { id: judgeId, username } }, { status: 201 });

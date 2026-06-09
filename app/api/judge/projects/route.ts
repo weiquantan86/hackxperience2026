@@ -4,7 +4,9 @@ import { verifyRoleMapping } from "@/lib/auth/role-mapping";
 import { supabaseServer } from "@/lib/supabase-server";
 import { mapSubmissionToJudgeProject, totalScore, type JudgeScoreRow } from "@/lib/server/portal-data";
 import {
+  isJudgeScoreActorIdError,
   normalizeJudgeScoreRows,
+  resolveJudgeActorCandidates,
   resolveJudgeScoresIdColumn,
   selectJudgeScoresColumns,
 } from "@/lib/server/judge-scores";
@@ -41,16 +43,34 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  const [submissionsResult, scoresResult, settingsResult] = await Promise.all([
+  let actorCandidates: Awaited<ReturnType<typeof resolveJudgeActorCandidates>>;
+  try {
+    actorCandidates = await resolveJudgeActorCandidates({
+      sessionUserId: auth.session.userId,
+      sessionUsername: auth.session.username,
+      createLegacyIfMissing: false,
+    });
+  } catch (actorError) {
+    return NextResponse.json(
+      { error: actorError instanceof Error ? actorError.message : "Unable to resolve judge identity." },
+      { status: 500 },
+    );
+  }
+
+  async function selectScoresByActorIds(actorIds: Array<string | number>) {
+    return supabaseServer
+      .from("judges_scores")
+      .select(selectJudgeScoresColumns(judgeScoreIdColumn))
+      .in(judgeScoreIdColumn, actorIds);
+  }
+
+  const [submissionsResult, scoresResultFirst, settingsResult] = await Promise.all([
     supabaseServer
       .from("submissions")
       .select("*")
       .eq("status", "APPROVED")
       .order("submitted_at", { ascending: false }),
-    supabaseServer
-      .from("judges_scores")
-      .select(selectJudgeScoresColumns(judgeScoreIdColumn))
-      .eq(judgeScoreIdColumn, auth.session.userId),
+    selectScoresByActorIds(actorCandidates.candidates),
     supabaseServer
       .from("settings")
       .select("submission_status")
@@ -62,11 +82,22 @@ export async function GET(request: NextRequest) {
   if (submissionsResult.error) {
     return NextResponse.json({ error: submissionsResult.error.message }, { status: 500 });
   }
-  if (scoresResult.error) {
-    return NextResponse.json({ error: scoresResult.error.message }, { status: 500 });
-  }
   if (settingsResult.error) {
     return NextResponse.json({ error: settingsResult.error.message }, { status: 500 });
+  }
+
+  let scoresResult = scoresResultFirst;
+  if (
+    scoresResult.error &&
+    isJudgeScoreActorIdError(scoresResult.error) &&
+    typeof actorCandidates.legacyJudgeId === "number"
+  ) {
+    const retryResult = await selectScoresByActorIds([actorCandidates.legacyJudgeId]);
+    scoresResult = retryResult;
+  }
+
+  if (scoresResult.error) {
+    return NextResponse.json({ error: scoresResult.error.message }, { status: 500 });
   }
 
   const submissions = (submissionsResult.data ?? []) as SubmissionRow[];

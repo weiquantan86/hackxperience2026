@@ -1,14 +1,23 @@
 import "server-only";
 
 import { supabaseServer } from "@/lib/supabase-server";
+import { normalizePortalUsername } from "@/lib/auth/portal-identity";
+import type { PortalUserId } from "@/lib/auth/session";
 
 export type JudgeScoresIdColumn = "judges_id" | "judge_id";
 
 type LooseScoreRow = Record<string, unknown>;
+type LegacyJudgeRow = {
+  id: number;
+};
+type ErrorLike = {
+  code?: string;
+  message?: string;
+};
 
 let cachedJudgeScoresIdColumn: JudgeScoresIdColumn | null = null;
 
-function isMissingColumnError(error: { code?: string; message?: string } | null | undefined, column: JudgeScoresIdColumn) {
+function isMissingColumnError(error: ErrorLike | null | undefined, column: JudgeScoresIdColumn) {
   if (!error) return false;
   const message = (error.message ?? "").toLowerCase();
   const needle = column.toLowerCase();
@@ -18,6 +27,54 @@ function isMissingColumnError(error: { code?: string; message?: string } | null 
     (message.includes(needle) && (message.includes("column") || message.includes("schema cache"))) ||
     message.includes("does not exist")
   );
+}
+
+function isMissingTableError(error: ErrorLike | null | undefined) {
+  if (!error) return false;
+  const message = (error.message ?? "").toLowerCase();
+  return (
+    error.code === "42P01" ||
+    error.code === "PGRST205" ||
+    message.includes("could not find the table") ||
+    message.includes("relation") ||
+    message.includes("does not exist")
+  );
+}
+
+function isDuplicateError(error: ErrorLike | null | undefined) {
+  if (!error) return false;
+  const message = (error.message ?? "").toLowerCase();
+  return error.code === "23505" || message.includes("duplicate") || message.includes("already exists");
+}
+
+export function isJudgeScoreActorIdError(error: ErrorLike | null | undefined) {
+  if (!error) return false;
+
+  const message = (error.message ?? "").toLowerCase();
+  return (
+    error.code === "23503" || // foreign_key_violation
+    error.code === "22P02" || // invalid_text_representation
+    error.code === "42804" || // datatype_mismatch
+    (message.includes("foreign key") && message.includes("judge")) ||
+    message.includes("invalid input syntax") ||
+    message.includes("violates foreign key constraint")
+  );
+}
+
+export function toDatabaseJudgeActorId(value: PortalUserId): string | number {
+  if (typeof value === "number") return value;
+
+  const trimmed = value.trim();
+  if (/^\d+$/.test(trimmed)) {
+    const asNumber = Number(trimmed);
+    if (Number.isSafeInteger(asNumber)) return asNumber;
+  }
+
+  return trimmed;
+}
+
+function sameActorId(left: string | number, right: string | number) {
+  return String(left) === String(right);
 }
 
 export async function resolveJudgeScoresIdColumn(): Promise<JudgeScoresIdColumn> {
@@ -92,4 +149,89 @@ export function normalizeJudgeScoreRows(
 
 export function selectJudgeScoresColumns(idColumn: JudgeScoresIdColumn) {
   return `${idColumn},submission_id,technical_execution,problem_solution_fit,innovation_creativity,presentation_quality,private_comment`;
+}
+
+export async function resolveLegacyJudgeId(
+  username: string,
+  options?: { createIfMissing?: boolean },
+) {
+  const normalizedUsername = normalizePortalUsername(username);
+  if (!normalizedUsername) return null;
+
+  const existing = await supabaseServer
+    .from("judges")
+    .select("id")
+    .ilike("username", normalizedUsername)
+    .maybeSingle<LegacyJudgeRow>();
+
+  if (existing.error) {
+    if (isMissingTableError(existing.error)) return null;
+    throw new Error(existing.error.message);
+  }
+
+  if (typeof existing.data?.id === "number") return existing.data.id;
+  if (!options?.createIfMissing) return null;
+
+  const insertResult = await supabaseServer
+    .from("judges")
+    .insert({
+      username: normalizedUsername,
+      password: `auth_managed_${Date.now()}`,
+    })
+    .select("id")
+    .single<LegacyJudgeRow>();
+
+  if (!insertResult.error && typeof insertResult.data?.id === "number") {
+    return insertResult.data.id;
+  }
+
+  if (isMissingTableError(insertResult.error)) {
+    return null;
+  }
+
+  if (isDuplicateError(insertResult.error)) {
+    const duplicateLookup = await supabaseServer
+      .from("judges")
+      .select("id")
+      .ilike("username", normalizedUsername)
+      .maybeSingle<LegacyJudgeRow>();
+
+    if (duplicateLookup.error) {
+      if (isMissingTableError(duplicateLookup.error)) return null;
+      throw new Error(duplicateLookup.error.message);
+    }
+
+    return typeof duplicateLookup.data?.id === "number" ? duplicateLookup.data.id : null;
+  }
+
+  throw new Error(insertResult.error?.message ?? "Unable to create legacy judge row.");
+}
+
+export async function resolveJudgeActorCandidates({
+  sessionUserId,
+  sessionUsername,
+  createLegacyIfMissing = false,
+}: {
+  sessionUserId: PortalUserId;
+  sessionUsername: string;
+  createLegacyIfMissing?: boolean;
+}) {
+  const primaryActorId = toDatabaseJudgeActorId(sessionUserId);
+  const legacyJudgeId = await resolveLegacyJudgeId(sessionUsername, {
+    createIfMissing: createLegacyIfMissing,
+  });
+
+  const candidates: Array<string | number> = [primaryActorId];
+  if (
+    typeof legacyJudgeId === "number" &&
+    !candidates.some((candidate) => sameActorId(candidate, legacyJudgeId))
+  ) {
+    candidates.push(legacyJudgeId);
+  }
+
+  return {
+    primaryActorId,
+    legacyJudgeId,
+    candidates,
+  };
 }

@@ -3,16 +3,18 @@
 
 import { motion } from "framer-motion";
 import { C, FM, FB, SPRING, SHADOW } from "../constants";
-import { CRITERIA, isFieldInvalid, type CriterionKey } from "../scoring";
+import { CRITERIA, isFieldInvalid, type CriterionKey, type ScoringCriterion } from "../scoring";
 import type { ScoreEntry } from "../types";
 import { RedBar } from "./atoms";
 
-export function ScoringPanel({ score, onChange, onSave }: {
+export function ScoringPanel({ score, onChange, onSave, criteria }: {
   score: ScoreEntry;
   onChange: (field: string, value: string) => void;
   onSave: () => void;
+  criteria?: readonly ScoringCriterion[];
 }) {
-  const anyInvalid = CRITERIA.some(c => isFieldInvalid(score[c.key as CriterionKey], c.max));
+  const activeCriteria = criteria ?? CRITERIA;
+  const anyInvalid = activeCriteria.some(c => isFieldInvalid(score[c.key as CriterionKey], c.max));
 
   return (
     <div
@@ -41,7 +43,7 @@ export function ScoringPanel({ score, onChange, onSave }: {
         // ASSESSMENT_MATRIX
       </div>
 
-      {CRITERIA.map((c, i) => {
+      {activeCriteria.map((c, i) => {
         const altRow   = i % 2 === 1;
         const rowColor = altRow ? C.red : C.offWhite;
         const val      = score[c.key as CriterionKey];
@@ -54,7 +56,7 @@ export function ScoringPanel({ score, onChange, onSave }: {
             style={{
               display: "flex", alignItems: "center", justifyContent: "space-between",
               padding: "11px 0",
-              borderBottom: i < CRITERIA.length - 1 ? "1px solid rgba(85,85,85,0.2)" : "none",
+              borderBottom: i < activeCriteria.length - 1 ? "1px solid rgba(85,85,85,0.2)" : "none",
             }}
           >
             <span style={{ fontFamily: FM, fontSize: 12, color: rowColor, flex: 1 }}>{c.label}</span>

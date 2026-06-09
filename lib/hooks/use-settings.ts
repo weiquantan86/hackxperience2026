@@ -11,6 +11,10 @@ export type GlobalSettings = {
   max_file_size: number;
   deadline: string;
   active_tracks: string[];
+  technical_execution_value: number;
+  problem_solution_fit_value: number;
+  innovation_creativity_value: number;
+  presentation_quality_value: number;
   updated_at: string;
 };
 
@@ -27,6 +31,10 @@ const DEFAULT_SETTINGS: GlobalSettings = {
   max_file_size: 10,
   deadline: "",
   active_tracks: [],
+  technical_execution_value: 30,
+  problem_solution_fit_value: 25,
+  innovation_creativity_value: 25,
+  presentation_quality_value: 20,
   updated_at: "",
 };
 
@@ -50,6 +58,18 @@ function normalizeSettings(value: Partial<GlobalSettings> | undefined): GlobalSe
     active_tracks: Array.isArray(next.active_tracks)
       ? next.active_tracks.filter((item): item is string => typeof item === "string")
       : DEFAULT_SETTINGS.active_tracks,
+    technical_execution_value: typeof next.technical_execution_value === "number"
+      ? Math.max(0, Math.round(next.technical_execution_value))
+      : DEFAULT_SETTINGS.technical_execution_value,
+    problem_solution_fit_value: typeof next.problem_solution_fit_value === "number"
+      ? Math.max(0, Math.round(next.problem_solution_fit_value))
+      : DEFAULT_SETTINGS.problem_solution_fit_value,
+    innovation_creativity_value: typeof next.innovation_creativity_value === "number"
+      ? Math.max(0, Math.round(next.innovation_creativity_value))
+      : DEFAULT_SETTINGS.innovation_creativity_value,
+    presentation_quality_value: typeof next.presentation_quality_value === "number"
+      ? Math.max(0, Math.round(next.presentation_quality_value))
+      : DEFAULT_SETTINGS.presentation_quality_value,
     updated_at: typeof next.updated_at === "string" ? next.updated_at : DEFAULT_SETTINGS.updated_at,
   };
 }

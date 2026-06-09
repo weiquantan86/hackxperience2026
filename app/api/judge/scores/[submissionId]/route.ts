@@ -4,7 +4,9 @@ import { verifyRoleMapping } from "@/lib/auth/role-mapping";
 import { supabaseServer } from "@/lib/supabase-server";
 import { totalScore, type JudgeScoreRow } from "@/lib/server/portal-data";
 import {
+  isJudgeScoreActorIdError,
   normalizeJudgeScoreRows,
+  resolveJudgeActorCandidates,
   resolveJudgeScoresIdColumn,
   selectJudgeScoresColumns,
 } from "@/lib/server/judge-scores";
@@ -99,21 +101,65 @@ export async function PUT(request: NextRequest, { params }: RouteContext) {
     return NextResponse.json({ error: "Submission is not available for scoring." }, { status: 404 });
   }
 
-  const upsertPayload = {
-    [judgeScoreIdColumn]: auth.session.userId,
-    submission_id: submissionId,
-    technical_execution: technicalExecution,
-    problem_solution_fit: problemSolutionFit,
-    innovation_creativity: innovationCreativity,
-    presentation_quality: presentationQuality,
-    private_comment: privateComment,
-  };
+  let actorCandidates: Awaited<ReturnType<typeof resolveJudgeActorCandidates>>;
+  try {
+    actorCandidates = await resolveJudgeActorCandidates({
+      sessionUserId: auth.session.userId,
+      sessionUsername: auth.session.username,
+      createLegacyIfMissing: false,
+    });
+  } catch (actorError) {
+    return NextResponse.json(
+      { error: actorError instanceof Error ? actorError.message : "Unable to resolve judge identity." },
+      { status: 500 },
+    );
+  }
 
-  const { data, error } = await supabaseServer
-    .from("judges_scores")
-    .upsert(upsertPayload, { onConflict: `${judgeScoreIdColumn},submission_id` })
-    .select(selectJudgeScoresColumns(judgeScoreIdColumn))
-    .single<Record<string, unknown>>();
+  async function upsertForActorId(actorId: string | number) {
+    return supabaseServer
+      .from("judges_scores")
+      .upsert(
+        {
+          [judgeScoreIdColumn]: actorId,
+          submission_id: submissionId,
+          technical_execution: technicalExecution,
+          problem_solution_fit: problemSolutionFit,
+          innovation_creativity: innovationCreativity,
+          presentation_quality: presentationQuality,
+          private_comment: privateComment,
+        },
+        { onConflict: `${judgeScoreIdColumn},submission_id` },
+      )
+      .select(selectJudgeScoresColumns(judgeScoreIdColumn))
+      .single<Record<string, unknown>>();
+  }
+
+  let { data, error } = await upsertForActorId(actorCandidates.primaryActorId);
+
+  if (error && isJudgeScoreActorIdError(error)) {
+    try {
+      const fallbackCandidates = await resolveJudgeActorCandidates({
+        sessionUserId: auth.session.userId,
+        sessionUsername: auth.session.username,
+        createLegacyIfMissing: true,
+      });
+
+      const fallbackActorId = fallbackCandidates.legacyJudgeId;
+      if (
+        typeof fallbackActorId === "number" &&
+        String(fallbackActorId) !== String(actorCandidates.primaryActorId)
+      ) {
+        const retry = await upsertForActorId(fallbackActorId);
+        data = retry.data;
+        error = retry.error;
+      }
+    } catch (fallbackError) {
+      return NextResponse.json(
+        { error: fallbackError instanceof Error ? fallbackError.message : "Unable to resolve judge identity." },
+        { status: 500 },
+      );
+    }
+  }
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });

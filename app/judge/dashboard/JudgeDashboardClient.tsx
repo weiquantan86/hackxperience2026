@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import type { JudgeProject } from "@/lib/types";
 import { C, FM, FB, SPRING, SHADOW, SHADOW_LG, RESPONSIVE_CSS } from "./constants";
-import { CRITERIA, makeBlankScore, calcLiveTotal, isFieldInvalid, type CriterionKey } from "./scoring";
+import { makeBlankScore, calcLiveTotal, calcMaxTotal, isFieldInvalid, type CriterionKey, type ScoringCriterion } from "./scoring";
 import type { ScoreEntry } from "./types";
 import { PlaceholderThumb, RedBar } from "./components/atoms";
 import { ScoringPanel } from "./components/ScoringPanel";
@@ -59,6 +59,39 @@ export default function JudgeDashboardClient() {
   const [submissionOpen, setSubmissionOpen] = useState(true);
   const [loading,        setLoading]        = useState(true);
   const [loadError,      setLoadError]      = useState("");
+
+  const scoringCriteria = useMemo<readonly ScoringCriterion[]>(
+    () => [
+      {
+        key: "techExec",
+        label: "Technical Execution",
+        max: Math.max(0, Math.round(settings.technical_execution_value)),
+      },
+      {
+        key: "problemSolution",
+        label: "Problem-Solution Fit",
+        max: Math.max(0, Math.round(settings.problem_solution_fit_value)),
+      },
+      {
+        key: "innovation",
+        label: "Innovation + Creativity",
+        max: Math.max(0, Math.round(settings.innovation_creativity_value)),
+      },
+      {
+        key: "presentation",
+        label: "Presentation Quality",
+        max: Math.max(0, Math.round(settings.presentation_quality_value)),
+      },
+    ],
+    [
+      settings.innovation_creativity_value,
+      settings.presentation_quality_value,
+      settings.problem_solution_fit_value,
+      settings.technical_execution_value,
+    ],
+  );
+
+  const maxScoreTotal = useMemo(() => calcMaxTotal(scoringCriteria), [scoringCriteria]);
 
   const TRACKS = useMemo(
     () => ["ALL", ...Array.from(new Set(projectsData.map((project) => project.track)))],
@@ -138,7 +171,7 @@ export default function JudgeDashboardClient() {
 
   async function saveScore(projectId: string) {
     const score = scores[projectId] ?? makeBlankScore();
-    if (CRITERIA.some((criterion) => isFieldInvalid(score[criterion.key as CriterionKey], criterion.max))) {
+    if (scoringCriteria.some((criterion) => isFieldInvalid(score[criterion.key as CriterionKey], criterion.max))) {
       return;
     }
 
@@ -160,7 +193,7 @@ export default function JudgeDashboardClient() {
       return;
     }
 
-    const total = typeof payload.total === "number" ? payload.total : calcLiveTotal(score);
+    const total = typeof payload.total === "number" ? payload.total : calcLiveTotal(score, scoringCriteria);
     setScores((prev) => ({
       ...prev,
       [projectId]: { ...(prev[projectId] ?? makeBlankScore()), saved: true, savedTotal: total },
@@ -344,7 +377,7 @@ export default function JudgeDashboardClient() {
             ) : (
               <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                 {projects.map(p => {
-                  const score      = scores[p.id];
+                  const score      = scores[p.id] ?? makeBlankScore();
                   const isExpanded = expandedId === p.id;
 
                   return (
@@ -398,7 +431,9 @@ export default function JudgeDashboardClient() {
                             <span style={{ fontFamily: FM, fontSize: 22, color: score.saved ? C.red : C.offWhite, fontWeight: 700, lineHeight: 1 }}>
                               {score.savedTotal}
                             </span>
-                            <span style={{ fontFamily: FM, fontSize: 11, color: C.muted, lineHeight: 1 }}>/100</span>
+                            <span style={{ fontFamily: FM, fontSize: 11, color: C.muted, lineHeight: 1 }}>
+                              /{maxScoreTotal}
+                            </span>
                           </motion.button>
                         </div>
                       </motion.div>
@@ -417,6 +452,7 @@ export default function JudgeDashboardClient() {
                               score={score}
                               onChange={(field, value) => updateScore(p.id, field, value)}
                               onSave={() => saveScore(p.id)}
+                              criteria={scoringCriteria}
                             />
                           </motion.div>
                         )}

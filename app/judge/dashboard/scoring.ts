@@ -9,6 +9,11 @@ export const CRITERIA = [
 ] as const;
 
 export type CriterionKey = typeof CRITERIA[number]["key"];
+export type ScoringCriterion = {
+  key: CriterionKey;
+  label: string;
+  max: number;
+};
 
 export function makeBlankScore(): ScoreEntry {
   return { techExec: "", problemSolution: "", innovation: "", presentation: "", comment: "", saved: false, savedTotal: 0 };
@@ -20,11 +25,15 @@ export function isFieldInvalid(value: string, max: number): boolean {
   return isNaN(n) || n < 0 || n > max || !Number.isInteger(n);
 }
 
-export function calcLiveTotal(score: ScoreEntry): number {
-  return CRITERIA.reduce((sum, c) => {
+export function calcLiveTotal(score: ScoreEntry, criteria: readonly ScoringCriterion[] = CRITERIA): number {
+  return criteria.reduce((sum, c) => {
     const v = parseInt(score[c.key as CriterionKey]);
     return sum + (isNaN(v) || isFieldInvalid(score[c.key as CriterionKey], c.max) ? 0 : v);
   }, 0);
+}
+
+export function calcMaxTotal(criteria: readonly ScoringCriterion[] = CRITERIA): number {
+  return criteria.reduce((sum, criterion) => sum + Math.max(0, Math.round(criterion.max)), 0);
 }
 
 export function fmtDate(iso: string): string {
