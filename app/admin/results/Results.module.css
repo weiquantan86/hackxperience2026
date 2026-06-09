@@ -74,10 +74,9 @@
 }
 
 .tableGrid {
-  --judge-count: 1;
-  min-width: 880px;
+  min-width: 720px;
   display: grid;
-  grid-template-columns: minmax(280px, 1.45fr) repeat(var(--judge-count), minmax(150px, 1fr)) minmax(170px, 1fr);
+  grid-template-columns: minmax(280px, 1.45fr) minmax(210px, 1fr) minmax(150px, 0.8fr);
   align-items: stretch;
 }
 

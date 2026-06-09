@@ -2,11 +2,26 @@
 
 import { Download } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import type { CSSProperties } from "react";
 import { AdminShellConfig, type AdminMetric } from "../components/AdminShell";
 import type { AdminSubmission } from "@/lib/types";
 import { fetchAdminSubmissions } from "@/lib/client/admin-api";
 import styles from "./Results.module.css";
+
+type SettingsPayload = {
+  settings?: {
+    technical_execution_value?: number;
+    problem_solution_fit_value?: number;
+    innovation_creativity_value?: number;
+    presentation_quality_value?: number;
+  };
+};
+
+type AggregateRow = {
+  id: string;
+  projectName: string;
+  judgeUsername: string;
+  aveScore: number;
+};
 
 function buildMetrics(submissions: AdminSubmission[]): AdminMetric[] {
   const pending = submissions.filter((submission) => submission.status === "pending").length;
@@ -53,78 +68,99 @@ function buildMetrics(submissions: AdminSubmission[]): AdminMetric[] {
   ];
 }
 
-function scoreFor(submission: AdminSubmission, judgeId: string) {
-  return submission.scores.find((score) => score.judgeId === judgeId)?.score ?? null;
-}
-
-function scoredAverage(submission: AdminSubmission) {
-  const numericScores = submission.scores
-    .map((score) => score.score)
-    .filter((score): score is number => typeof score === "number");
-
-  if (numericScores.length === 0) {
-    return null;
-  }
-
-  return Math.round(
-    numericScores.reduce((total, score) => total + score, 0) / numericScores.length,
-  );
-}
-
-function scoreLabel(score: number | null) {
-  return typeof score === "number" ? `${score}/100` : "-";
-}
-
-function sortByAverageDesc(submissions: AdminSubmission[]) {
-  return [...submissions].sort((left, right) => {
-    const leftAverage = scoredAverage(left);
-    const rightAverage = scoredAverage(right);
-
-    if (leftAverage === null && rightAverage === null) {
-      return left.projectName.localeCompare(right.projectName);
-    }
-    if (leftAverage === null) return 1;
-    if (rightAverage === null) return -1;
-    if (rightAverage !== leftAverage) return rightAverage - leftAverage;
-    return left.projectName.localeCompare(right.projectName);
-  });
-}
-
 function escapeCsv(value: string) {
   return `"${value.replace(/"/g, '""')}"`;
 }
 
-function buildCsv(submissions: AdminSubmission[], judgeIds: string[]) {
-  const header = ["Project", "Team", ...judgeIds.map((judgeId) => judgeId.toUpperCase()), "Average Score"];
-  const rows = submissions.map((submission) => [
-    submission.projectName,
-    submission.teamName,
-    ...judgeIds.map((judgeId) => scoreLabel(scoreFor(submission, judgeId))),
-    scoreLabel(scoredAverage(submission)),
+function buildCsv(rows: AggregateRow[]) {
+  const header = ["Project", "Judge Username", "Ave Score"];
+  const values = rows.map((row) => [
+    row.projectName,
+    row.judgeUsername.toUpperCase(),
+    `${row.aveScore}%`,
   ]);
 
-  return [header, ...rows]
+  return [header, ...values]
     .map((row) => row.map((cell) => escapeCsv(cell)).join(","))
     .join("\n");
 }
 
+function normalizeMaxPoints(payload: SettingsPayload | null) {
+  const technical =
+    typeof payload?.settings?.technical_execution_value === "number"
+      ? payload.settings.technical_execution_value
+      : 30;
+  const problemFit =
+    typeof payload?.settings?.problem_solution_fit_value === "number"
+      ? payload.settings.problem_solution_fit_value
+      : 25;
+  const innovation =
+    typeof payload?.settings?.innovation_creativity_value === "number"
+      ? payload.settings.innovation_creativity_value
+      : 25;
+  const presentation =
+    typeof payload?.settings?.presentation_quality_value === "number"
+      ? payload.settings.presentation_quality_value
+      : 20;
+
+  return Math.max(1, Math.round(technical + problemFit + innovation + presentation));
+}
+
+function buildAggregateRows(submissions: AdminSubmission[], overallMaxPoints: number) {
+  const rows = submissions.flatMap((submission) =>
+    submission.scores
+      .filter(
+        (score): score is { judgeId: string; score: number } =>
+          typeof score.score === "number" && Number.isFinite(score.score),
+      )
+      .map((score, index) => {
+        const normalizedPercent = (score.score / overallMaxPoints) * 100;
+        return {
+          id: `${submission.id}:${score.judgeId}:${index}`,
+          projectName: submission.projectName,
+          judgeUsername: score.judgeId,
+          aveScore: Math.round(normalizedPercent * 100) / 100,
+        };
+      }),
+  );
+
+  return rows.sort((left, right) => {
+    if (right.aveScore !== left.aveScore) return right.aveScore - left.aveScore;
+    const byProject = left.projectName.localeCompare(right.projectName);
+    if (byProject !== 0) return byProject;
+    return left.judgeUsername.localeCompare(right.judgeUsername);
+  });
+}
+
 export default function ResultsClient() {
   const [data, setData] = useState<AdminSubmission[]>([]);
-  const [judgeIds, setJudgeIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [exportState, setExportState] = useState("");
+  const [overallMaxPoints, setOverallMaxPoints] = useState(100);
+
   const shellMetrics = useMemo(() => buildMetrics(data), [data]);
-  const sortedData = useMemo(() => sortByAverageDesc(data), [data]);
-  const judgeColumnCount = Math.max(judgeIds.length, 1);
+  const aggregateRows = useMemo(
+    () => buildAggregateRows(data, overallMaxPoints),
+    [data, overallMaxPoints],
+  );
 
   const loadResults = useCallback(async () => {
     setLoading(true);
     setError("");
+
     try {
-      const payload = await fetchAdminSubmissions();
+      const [payload, settingsResponse] = await Promise.all([
+        fetchAdminSubmissions(),
+        fetch("/api/settings/public", { cache: "no-store" }),
+      ]);
+
       setData(payload.submissions);
-      setJudgeIds(payload.judgeIds);
+
+      if (settingsResponse.ok) {
+        const settingsPayload = (await settingsResponse.json()) as SettingsPayload;
+        setOverallMaxPoints(normalizeMaxPoints(settingsPayload));
+      }
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : "Unable to load aggregate scores.");
     } finally {
@@ -137,7 +173,7 @@ export default function ResultsClient() {
   }, [loadResults]);
 
   function exportScoresCsv() {
-    const csv = buildCsv(sortedData, judgeIds);
+    const csv = buildCsv(aggregateRows);
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
@@ -156,7 +192,11 @@ export default function ResultsClient() {
       <header className={styles.contentHeader}>
         <div>
           <h2>&gt; AGGREGATE_SCORES</h2>
-          <p>{error ? `// ${error.toUpperCase()}` : (loading ? "// LOADING JUDGES SCORES" : "// VIEW JUDGES SCORES & AVERAGES")}</p>
+          <p>
+            {error
+              ? `// ${error.toUpperCase()}`
+              : (loading ? "// LOADING JUDGES SCORES" : `// AVE_SCORE = (OVERALL_POINTS / ${overallMaxPoints}) * 100`)}
+          </p>
         </div>
         <button type="button" className={styles.exportButton} onClick={exportScoresCsv}>
           <Download aria-hidden="true" />
@@ -165,73 +205,37 @@ export default function ResultsClient() {
       </header>
 
       <section className={styles.tablePanel}>
-        <div
-          className={styles.tableGrid}
-          style={
-            {
-              "--judge-count": String(judgeColumnCount),
-            } as CSSProperties
-          }
-        >
+        <div className={styles.tableGrid}>
           <div className={styles.tableHead}>PROJECT</div>
-          {judgeIds.length > 0 ? (
-            judgeIds.map((judgeId) => (
-              <div className={styles.tableHead} key={judgeId}>
-                {judgeId.toUpperCase()}
+          <div className={styles.tableHead}>JUDGE_USERNAME</div>
+          <div className={styles.tableHead}>AVE_SCORE</div>
+
+          {aggregateRows.map((row) => (
+            <div className={styles.tableRow} key={row.id}>
+              <div className={`${styles.tableCell} ${styles.projectCell}`} data-label="PROJECT">
+                <span className={styles.projectName}>{row.projectName}</span>
               </div>
-            ))
-          ) : (
-            <div className={styles.tableHead}>NO_JUDGES</div>
-          )}
-          <div className={styles.tableHead}>AVERAGE_SCORE</div>
-
-          {sortedData.map((submission) => {
-            const average = scoredAverage(submission);
-
-            return (
-              <div className={styles.tableRow} key={submission.id}>
-                <div className={`${styles.tableCell} ${styles.projectCell}`} data-label="PROJECT">
-                  <span className={styles.projectName}>{submission.projectName}</span>
-                  <span className={styles.teamName}>{submission.teamName}</span>
-                </div>
-                {judgeIds.length > 0 ? (
-                  judgeIds.map((judgeId) => (
-                    <div className={styles.tableCell} key={judgeId} data-label={judgeId}>
-                      {scoreLabel(scoreFor(submission, judgeId))}
-                    </div>
-                  ))
-                ) : (
-                  <div className={styles.tableCell} data-label="NO_JUDGES">
-                    -
-                  </div>
-                )}
-                <div className={`${styles.tableCell} ${styles.averageCell}`} data-label="AVERAGE_SCORE">
-                  {typeof average === "number" ? (
-                    <>
-                      <span>{average}</span>
-                      <span className={styles.averageSuffix}>/100</span>
-                    </>
-                  ) : (
-                    "-"
-                  )}
-                </div>
+              <div className={styles.tableCell} data-label="JUDGE_USERNAME">
+                {row.judgeUsername}
               </div>
-            );
-          })}
+              <div className={`${styles.tableCell} ${styles.averageCell}`} data-label="AVE_SCORE">
+                <span>{row.aveScore}</span>
+                <span className={styles.averageSuffix}>%</span>
+              </div>
+            </div>
+          ))}
 
-          {sortedData.length === 0 ? (
+          {aggregateRows.length === 0 ? (
             <div className={styles.tableRow}>
               <div className={`${styles.tableCell} ${styles.projectCell}`} data-label="PROJECT">
-                <span className={styles.projectName}>NO PROJECTS YET</span>
-                <span className={styles.teamName}>Scores will appear here once submissions are reviewed.</span>
+                <span className={styles.projectName}>NO SCORED PROJECTS YET</span>
               </div>
-              {Array.from({ length: judgeColumnCount }, (_, idx) => (
-                <div className={styles.tableCell} key={`empty-${idx}`} data-label={judgeIds[idx] ?? "NO_JUDGES"}>
-                  -
-                </div>
-              ))}
-              <div className={`${styles.tableCell} ${styles.averageCell}`} data-label="AVERAGE_SCORE">
+              <div className={styles.tableCell} data-label="JUDGE_USERNAME">
                 -
+              </div>
+              <div className={`${styles.tableCell} ${styles.averageCell}`} data-label="AVE_SCORE">
+                <span>-</span>
+                <span className={styles.averageSuffix}>%</span>
               </div>
             </div>
           ) : null}
