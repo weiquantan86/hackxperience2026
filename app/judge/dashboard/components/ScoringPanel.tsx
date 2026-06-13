@@ -44,8 +44,7 @@ export function ScoringPanel({ score, onChange, onSave, criteria }: {
       </div>
 
       {activeCriteria.map((c, i) => {
-        const altRow   = i % 2 === 1;
-        const rowColor = altRow ? C.red : C.offWhite;
+        const rowColor = C.offWhite;
         const val      = score[c.key as CriterionKey];
         const invalid  = isFieldInvalid(val, c.max);
 
