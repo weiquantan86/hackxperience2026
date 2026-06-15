@@ -14,15 +14,42 @@ const CRITERION_SUBTITLES: Record<string, string> = {
   presentation:    "Clarity, structure, delivery, and visual appeal of the presentation.",
 };
 
-function CriterionIcon({ color }: { color: string }) {
+function CriterionIcon({ color, criteriaKey }: { color: string; criteriaKey: string }) {
   return (
     <div style={{
       width: 36, height: 36, background: color, borderRadius: 4,
       display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+      color: C.white,
     }}>
-      <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-        <path d="M3 8h10M8 3v10" stroke={C.white} strokeWidth="1.8" strokeLinecap="round"/>
-      </svg>
+      {criteriaKey === "techExec" && (
+        <span style={{ fontFamily: "var(--font-ibm-plex-mono), monospace", fontSize: 13, fontWeight: 700 }}>&lt;/&gt;</span>
+      )}
+      {criteriaKey === "problemSolution" && (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M4 6h6v3a2 2 0 1 1 0 4v3H4V6z" />
+          <path d="M14 6h6v10h-6v-3a2 2 0 1 0 0-4v-3z" />
+        </svg>
+      )}
+      {criteriaKey === "innovation" && (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M9 18h6" />
+          <path d="M10 21h4" />
+          <path d="M15.5 14c.5-1.5 1.5-2.5 1.5-4a5 5 0 0 0-10 0c0 1.5 1 2.5 1.5 4h7z" />
+          <line x1="12" y1="1" x2="12" y2="3" />
+          <line x1="4.5" y1="4.5" x2="6" y2="6" />
+          <line x1="19.5" y1="4.5" x2="18" y2="6" />
+          <line x1="1" y1="10" x2="3" y2="10" />
+          <line x1="23" y1="10" x2="21" y2="10" />
+        </svg>
+      )}
+      {criteriaKey === "presentation" && (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M9 3h6l1 4H8l1-4z" />
+          <path d="M8 7L3 18" strokeDasharray="2 3" />
+          <path d="M16 7l6 13" strokeDasharray="2 3" />
+          <ellipse cx="12" cy="19" rx="9" ry="2.5" />
+        </svg>
+      )}
     </div>
   );
 }
@@ -70,7 +97,7 @@ export function ScoringPanel({ score, onChange, onSave, criteria, projectId: _pr
       `}</style>
 
       {/* Scoring rows */}
-      <div style={{ flex: 1, padding: "0 20px" }}>
+      <div style={{ flex: 1, padding: "0 16px" }}>
         {activeCriteria.map((c, i) => {
           const val      = parseInt(score[c.key as CriterionKey]) || 0;
           const invalid  = isFieldInvalid(score[c.key as CriterionKey], c.max);
@@ -86,7 +113,7 @@ export function ScoringPanel({ score, onChange, onSave, criteria, projectId: _pr
                 borderBottom: i < activeCriteria.length - 1 ? `1px solid ${C.borderLight}` : "none",
               }}
             >
-              <CriterionIcon color={ICON_COLORS[i] ?? C.primary} />
+              <CriterionIcon color={ICON_COLORS[i] ?? C.primary} criteriaKey={c.key} />
 
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div
@@ -95,16 +122,15 @@ export function ScoringPanel({ score, onChange, onSave, criteria, projectId: _pr
                 >
                   {c.label}
                 </div>
-                <div style={{ fontFamily: FM, fontSize: 10, color: C.textMuted, marginTop: 2, lineHeight: 1.4, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                <div className="r-score-desc" style={{ fontFamily: FM, fontSize: 10, color: C.textMuted, marginTop: 2, lineHeight: 1.4 }}>
                   {subtitle}
                 </div>
+                {invalid && (
+                  <div style={{ fontFamily: FM, fontSize: 10, color: C.primary, marginTop: 2, lineHeight: 1.4 }}>
+                    Please input the current criteria within {c.max}
+                  </div>
+                )}
               </div>
-
-              {invalid && (
-                <span style={{ fontFamily: FM, fontSize: 9, color: C.primary, letterSpacing: "0.04em", flexShrink: 0 }}>
-                  INVALID
-                </span>
-              )}
 
               {/* Stepper */}
               <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
@@ -128,13 +154,12 @@ export function ScoringPanel({ score, onChange, onSave, criteria, projectId: _pr
                 <input
                   type="number"
                   className="r-score-input"
-                  value={val}
+                  value={score[c.key as CriterionKey]}
                   min={0}
                   max={c.max}
                   onFocus={(e) => e.target.select()}
                   onChange={(e) => {
-                    const n = Math.min(c.max, Math.max(0, Number(e.target.value)));
-                    onChange(c.key, String(n));
+                    onChange(c.key, e.target.value);
                   }}
                   style={{
                     width: 38, height: 26,
@@ -173,7 +198,7 @@ export function ScoringPanel({ score, onChange, onSave, criteria, projectId: _pr
       </div>
 
       {/* Private comments */}
-      <div style={{ padding: "14px 20px 0", borderTop: `1px solid ${C.borderLight}` }}>
+      <div style={{ padding: "14px 16px 0", borderTop: `1px solid ${C.borderLight}` }}>
         <div style={{ fontFamily: FM, fontSize: 10, color: C.textMuted, letterSpacing: "0.08em", marginBottom: 8, textTransform: "uppercase" as const }}>
           Private Comments (Optional)
         </div>
@@ -200,7 +225,7 @@ export function ScoringPanel({ score, onChange, onSave, criteria, projectId: _pr
 
       {/* Footer: save indicator + TOTAL + SAVE SCORE button */}
       <div style={{
-        padding: "12px 20px 18px",
+        padding: "12px 16px 18px",
         display: "flex", alignItems: "center", justifyContent: "space-between",
         flexWrap: "wrap", gap: 10,
         borderTop: `1px solid ${C.borderLight}`,

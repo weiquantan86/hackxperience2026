@@ -644,7 +644,7 @@ export default function JudgeDashboardClient() {
                 style={{ overflow: "hidden" }}
                 className="r-detail-section"
               >
-                <div style={{
+                <div className="r-detail-container" style={{
                   background: C.white,
                   borderRadius: 12,
                   border: `1px solid ${C.borderLight}`,
@@ -653,7 +653,53 @@ export default function JudgeDashboardClient() {
                   overflow: "hidden"
                 }}>
 
-                  {/* Left: project image + info */}
+                  {/* Mobile-only project overview (top horizontal bar) */}
+                  <div className="r-detail-mobile-only" style={{ padding: "16px", borderBottom: `1px solid ${C.borderLight}`, flexDirection: "column", gap: "12px", background: "transparent" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                      <div style={{ width: 96, height: 54, borderRadius: 6, overflow: "hidden", background: C.borderLight, flexShrink: 0, position: "relative" }}>
+                        {expandedProject.thumbnailUrl ? (
+                          <img src={expandedProject.thumbnailUrl} alt={expandedProject.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                        ) : (
+                          <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                            <span style={{ fontFamily: FM, fontSize: 8, color: C.textMuted }}>NO IMG</span>
+                          </div>
+                        )}
+                      </div>
+                      <div style={{ display: "flex", flexDirection: "column", flex: 1, minWidth: 0 }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                          <div style={{ fontFamily: FM, fontSize: 13, fontWeight: 700, color: C.textPrimary, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                            {expandedProject.name}
+                          </div>
+                        </div>
+                        <div style={{ fontFamily: FM, fontSize: 9, color: C.textMuted, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", marginTop: 2 }}>
+                          {expandedProject.teamName}
+                        </div>
+                        <div style={{ marginTop: 6 }}>
+                          <span style={{ padding: "2px 6px", background: C.bgPrimary, border: `1px solid ${C.borderMedium}`, borderRadius: 4, fontFamily: FM, fontSize: 8, fontWeight: 700, color: C.textPrimary, letterSpacing: "0.05em", textTransform: "uppercase" as const }}>
+                            {expandedProject.track}
+                          </span>
+                        </div>
+                      </div>
+                      <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", flexShrink: 0 }}>
+                        <div style={{ fontFamily: FM, fontSize: 8, color: C.textMuted, letterSpacing: "0.1em", marginBottom: 4, textTransform: "uppercase" as const }}>TOTAL SCORE</div>
+                        <div style={{ fontFamily: FM, fontSize: 16, fontWeight: 700, color: C.primary, lineHeight: 1 }}>
+                          {scores[expandedProject.id]?.savedTotal ?? 0} <span style={{ fontSize: 10, color: C.textMuted }}>/ {maxScoreTotal}</span>
+                        </div>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => setOverlayProject(expandedProject)}
+                      style={{ width: "100%", padding: "8px 0", background: "transparent", border: `1px solid ${C.borderMedium}`, borderRadius: 6, fontFamily: FM, fontSize: 10, fontWeight: 700, color: C.textPrimary, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}
+                    >
+                      <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                        <rect x="0.5" y="0.5" width="11" height="11" rx="1" stroke="currentColor" strokeWidth="1"/>
+                        <path d="M3 3h2.5M3 6h6M3 9h4" stroke="currentColor" strokeWidth="1" strokeLinecap="round"/>
+                      </svg>
+                      VIEW SUBMISSION
+                    </button>
+                  </div>
+
+                  {/* Left: project image + info (Desktop) */}
                   <div
                     className="r-detail-left"
                     style={{

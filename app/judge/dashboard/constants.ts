@@ -54,11 +54,11 @@ export const RESPONSIVE_CSS = `
     .r-sidebar { display: none !important; }
   }
 
-  /* Content areas */
+  /* Main content padding adjustments */
   @media (max-width: 768px) {
-    .r-progress-section { padding: 14px 16px !important; }
-    .r-queue-section    { padding: 0 16px 16px !important; }
-    .r-detail-section   { padding: 0 16px 16px !important; }
+    .r-progress-section { padding: 16px 20px 14px !important; }
+    .r-queue-section    { padding: 16px 20px 16px !important; }
+    .r-detail-section   { padding: 0 !important; }
     .r-stat-boxes       { gap: 12px !important; }
   }
 
@@ -75,9 +75,12 @@ export const RESPONSIVE_CSS = `
   }
 
   /* Scoring panel */
-  @media (max-width: 640px) {
-    .r-scoring-panel  { padding: 16px 14px 18px !important; }
+  .r-detail-mobile-only { display: none !important; }
+  @media (max-width: 900px) {
+    .r-detail-container { flex-direction: column !important; }
+    .r-detail-mobile-only { display: flex !important; }
     .r-score-row      { padding: 8px 0 !important; }
+    .r-score-desc     { display: none !important; }
     .r-detail-left    { display: none !important; }
   }
 
