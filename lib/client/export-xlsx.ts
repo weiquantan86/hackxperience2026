@@ -96,6 +96,45 @@ function buildSheet(sheet: string, columns: ColumnSpec[], rows: ExcelRow[]): Exc
   };
 }
 
+// ── Sheet name utilities ────────────────────────────────────────────────────
+
+type Maxima = {
+  technical: number;
+  problem: number;
+  innovation: number;
+  presentation: number;
+  overall: number;
+};
+
+const DEFAULT_EXPORT_MAXIMA: Maxima = {
+  technical: 30,
+  problem: 25,
+  innovation: 25,
+  presentation: 20,
+  overall: 100,
+};
+
+/**
+ * Returns a valid Excel sheet name (≤31 chars, no \ / ? * [ ] :).
+ * Deduplicates by appending " (2)", " (3)", etc. when a name is already used.
+ */
+function sanitizeSheetName(raw: string, usedNames: Set<string>): string {
+  let safe = raw.replace(/[\\/?*[\]:]/g, "").trim().slice(0, 31) || "Sheet";
+
+  if (!usedNames.has(safe)) {
+    usedNames.add(safe);
+    return safe;
+  }
+  for (let i = 2; ; i++) {
+    const suffix = ` (${i})`;
+    const candidate = safe.slice(0, 31 - suffix.length) + suffix;
+    if (!usedNames.has(candidate)) {
+      usedNames.add(candidate);
+      return candidate;
+    }
+  }
+}
+
 // ── Sheet definitions ───────────────────────────────────────────────────────
 
 /** Ranked projects + final % (average of judge scores). */
@@ -114,13 +153,44 @@ function buildResultsSheet(submissions: AdminSubmission[]): ExcelSheet {
   ]);
 
   return buildSheet(
-    "Results",
+    "Overview",
     [
       { header: "Rank", width: 8 },
       { header: "Project Name", width: 34 },
       { header: "Team Name", width: 26 },
       { header: "Final Score (%)", width: 16 },
       { header: "Judges Counted", width: 16 },
+    ],
+    rows,
+  );
+}
+
+/** Per-judge criterion breakdown for a single project. */
+function buildTeamBreakdownSheet(
+  sheetName: string,
+  judges: ScoredJudge[],
+  maxima: Maxima,
+): ExcelSheet {
+  const rows: ExcelRow[] = judges.map((s) => [
+    str(s.judgeId),
+    num(s.technicalExecution),
+    num(s.problemSolutionFit),
+    num(s.innovationCreativity),
+    num(s.presentationQuality),
+    typeof s.score === "number" ? pctCell(Math.round(s.score * 100) / 100) : "",
+    wrapCell(s.comments),
+  ]);
+
+  return buildSheet(
+    sheetName,
+    [
+      { header: "Judge ID",                            width: 22 },
+      { header: `Technical (/${maxima.technical})`,    width: 18 },
+      { header: `Problem Fit (/${maxima.problem})`,    width: 18 },
+      { header: `Innovation (/${maxima.innovation})`,  width: 18 },
+      { header: `Presentation (/${maxima.presentation})`, width: 20 },
+      { header: `Total (/${maxima.overall})`,          width: 15 },
+      { header: "Comments",                            width: 50 },
     ],
     rows,
   );
@@ -232,12 +302,38 @@ function buildProjectsSheet(submissions: AdminSubmission[]): ExcelSheet {
 
 // ── Public exports — one single-sheet workbook (file) per export ────────────
 
-/** Results — ranked leaderboard with final percentages. */
+/**
+ * Results — ranked leaderboard (Overview tab) plus one breakdown tab per
+ * project showing each judge's per-criterion scores.
+ */
 export async function exportResultsXlsx(
   submissions: AdminSubmission[],
   filename: string,
+  maxima?: Maxima,
 ): Promise<void> {
-  await downloadWorkbook([buildResultsSheet(submissions)], filename);
+  const mx = maxima ?? DEFAULT_EXPORT_MAXIMA;
+
+  const overviewSheet = buildResultsSheet(submissions);
+
+  // Rank the same way the UI does so sheet order matches the leaderboard.
+  const ranked = submissions
+    .map((sub) => ({ sub, pct: finalPercent(sub) }))
+    .filter((r): r is { sub: AdminSubmission; pct: number } => r.pct !== null)
+    .sort((a, b) => b.pct - a.pct || a.sub.projectName.localeCompare(b.sub.projectName));
+
+  // "Overview" is already taken by the first sheet.
+  const usedNames = new Set<string>(["Overview"]);
+
+  const teamSheets: ExcelSheet[] = ranked
+    .map(({ sub }) => {
+      const judges = scoredJudges(sub);
+      if (judges.length === 0) return null;
+      const sheetName = sanitizeSheetName(sub.projectName, usedNames);
+      return buildTeamBreakdownSheet(sheetName, judges, mx);
+    })
+    .filter((s): s is ExcelSheet => s !== null);
+
+  await downloadWorkbook([overviewSheet, ...teamSheets], filename);
 }
 
 /** Judge score history — every judge's per-criterion score. */

@@ -154,7 +154,7 @@ export default function ResultsClient() {
     setExportState("GENERATING XLSX...");
     try {
       const { exportResultsXlsx } = await import("@/lib/client/export-xlsx");
-      await exportResultsXlsx(data, "hackxperience-results.xlsx");
+      await exportResultsXlsx(data, "hackxperience-results.xlsx", maxima);
       setExportState("RESULTS XLSX READY");
     } catch {
       setExportState("EXPORT FAILED, TRY AGAIN");
