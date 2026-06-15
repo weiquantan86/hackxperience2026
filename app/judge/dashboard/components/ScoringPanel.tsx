@@ -51,7 +51,7 @@ export function ScoringPanel({ score, onChange, onSave, criteria, projectId: _pr
     <div
       className="r-scoring-panel"
       style={{
-        background: C.bgPrimary,
+        background: "transparent",
         height: "100%",
         display: "flex",
         flexDirection: "column",
@@ -185,7 +185,7 @@ export function ScoringPanel({ score, onChange, onSave, criteria, projectId: _pr
           maxLength={1000}
           style={{
             width: "100%", height: 72,
-            background: C.bgPrimary,
+            background: "transparent",
             border: `1px solid ${C.borderMedium}`,
             color: C.textPrimary, fontFamily: FM, fontSize: 12,
             padding: "10px 12px", resize: "none", outline: "none",

@@ -332,12 +332,12 @@ export default function JudgeDashboardClient() {
       </div>
 
       {/* ── Body ── */}
-      <div className="r-body" style={{ display: "flex", flex: 1 }}>
+      <div className="r-body" style={{ display: "flex", flex: 1, background: C.bgPrimary }}>
 
         {/* ── Sidebar ── */}
         <aside
           className="r-sidebar"
-          style={{ width: 200, flexShrink: 0, background: C.bgPrimary, borderRight: `1px solid ${C.borderMedium}`, display: "flex", flexDirection: "column" }}
+          style={{ width: 200, flexShrink: 0, background: C.white, borderRight: "none", display: "flex", flexDirection: "column" }}
         >
           <div style={{ paddingTop: 20, flex: 1 }}>
             {NAV_ITEMS.map((item) => (
@@ -380,15 +380,17 @@ export default function JudgeDashboardClient() {
         </aside>
 
         {/* ── Main ── */}
-        <main style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0, background: C.bgPrimary }}>
+        <main style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0, background: C.bgPrimary, padding: "24px", gap: "24px" }}>
 
           {/* ── Judging Progress section ── */}
           <div
             className="r-progress-section"
             style={{
-              background: C.bgPrimary,
-              borderBottom: `1px solid ${C.borderMedium}`,
+              background: C.white,
+              borderRadius: 12,
+              border: `1px solid ${C.borderLight}`,
               padding: "18px 28px 16px",
+              boxShadow: "0 2px 8px rgba(0,0,0,0.04)"
             }}
           >
             {/* Label + bar */}
@@ -456,7 +458,13 @@ export default function JudgeDashboardClient() {
           {/* ── Project Queue ── */}
           <div
             className="r-queue-section"
-            style={{ background: C.bgPrimary, padding: "18px 28px 0" }}
+            style={{ 
+              background: C.white, 
+              borderRadius: 12,
+              border: `1px solid ${C.borderLight}`,
+              padding: "18px 28px 24px",
+              boxShadow: "0 2px 8px rgba(0,0,0,0.04)"
+            }}
           >
             {/* Queue header */}
             <div style={{ fontFamily: FM, fontSize: 10, color: C.textMuted, letterSpacing: "0.1em", marginBottom: 12, textTransform: "uppercase" as const }}>
@@ -638,10 +646,12 @@ export default function JudgeDashboardClient() {
                 className="r-detail-section"
               >
                 <div style={{
-                  background: C.bgPrimary,
-                  borderTop: `1px solid ${C.borderMedium}`,
-                  borderBottom: `1px solid ${C.borderMedium}`,
+                  background: C.white,
+                  borderRadius: 12,
+                  border: `1px solid ${C.borderLight}`,
                   display: "flex", gap: 0,
+                  boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
+                  overflow: "hidden"
                 }}>
 
                   {/* Left: project image + info */}
@@ -649,9 +659,9 @@ export default function JudgeDashboardClient() {
                     className="r-detail-left"
                     style={{
                       width: 260, flexShrink: 0,
-                      borderRight: `1px solid ${C.borderMedium}`,
+                      borderRight: `1px solid ${C.borderLight}`,
                       display: "flex", flexDirection: "column",
-                      background: C.bgPrimary,
+                      background: "transparent",
                     }}
                   >
                     {/* Thumbnail */}
