@@ -33,7 +33,7 @@ export const RESPONSIVE_CSS = `
   .r-hamburger { display: none; }
 
   /* Topbar */
-  @media (max-width: 768px) {
+  @media (max-width: 1024px) {
     .r-topbar          { padding: 0 16px !important; }
     .r-topbar-status   { display: none !important; }
     .r-topbar-email    { display: none !important; }
@@ -49,13 +49,13 @@ export const RESPONSIVE_CSS = `
   }
 
   /* Body layout */
-  @media (max-width: 768px) {
+  @media (max-width: 1024px) {
     .r-body    { flex-direction: column !important; }
     .r-sidebar { display: none !important; }
   }
 
   /* Main content padding adjustments */
-  @media (max-width: 768px) {
+  @media (max-width: 1024px) {
     .r-progress-section { padding: 16px 20px 14px !important; }
     .r-queue-section    { padding: 16px 20px 16px !important; }
     .r-detail-section   { padding: 0 !important; }
