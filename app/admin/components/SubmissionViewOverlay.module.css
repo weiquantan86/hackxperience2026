@@ -217,46 +217,35 @@
 
 /* ── Status badges ────────────────────────────── */
 
-.badgePending {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 5px 12px;
-  width: fit-content;
-  background: transparent;
-  border: 1px solid #1a1a1a;
-  color: #1a1a1a;
-  font-family: var(--font-admin-mono), monospace;
-  font-size: 11px;
-  line-height: 14px;
-}
-
-.badgeApproved {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 5px 12px;
-  width: fit-content;
-  background: #1a1a1a;
-  border: 1px solid #1a1a1a;
-  color: #f5f0e8;
-  font-family: var(--font-admin-mono), monospace;
-  font-size: 11px;
-  line-height: 14px;
-}
-
+.badgeApproved,
+.badgePending,
 .badgeRejected {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   padding: 5px 12px;
   width: fit-content;
-  background: #cc0000;
-  border: 1px solid #cc0000;
   color: #ffffff;
   font-family: var(--font-admin-mono), monospace;
   font-size: 11px;
   line-height: 14px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.badgeApproved {
+  background: #22c55e;
+  border: 1px solid #22c55e;
+}
+
+.badgePending {
+  background: #d97706;
+  border: 1px solid #d97706;
+}
+
+.badgeRejected {
+  background: #cc0000;
+  border: 1px solid #cc0000;
 }
 
 /* ── Tech stack tags ──────────────────────────── */

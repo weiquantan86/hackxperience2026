@@ -13,6 +13,8 @@ import styles from "./Submissions.module.css";
 
 export type SubmissionFilter = "all" | "pending" | "approved" | "rejected";
 
+const ITEMS_PER_PAGE = 10;
+
 const HEADER_MAP: Record<SubmissionFilter, { title: string; subtitle: string }> = {
   all: { title: "ALL_SUBMISSIONS", subtitle: "// MONITOR ALL HACKATHON SUBMISSIONS" },
   pending: { title: "PENDING_REVIEW", subtitle: "// AWAITING ADMIN REVIEW" },
@@ -302,6 +304,9 @@ export default function SubmissionsClient({ filter }: { filter: SubmissionFilter
   const [data, setData] = useState<AdminSubmission[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkDeleting, setBulkDeleting] = useState(false);
 
   const viewingSubmission = useMemo(
     () => data.find((s) => s.id === viewingId) ?? null,
@@ -343,6 +348,19 @@ export default function SubmissionsClient({ filter }: { filter: SubmissionFilter
     });
   }, [data, filter, statusFilter, trackFilter, searchTerm]);
 
+  // Reset to page 1 whenever the filtered set changes.
+  useEffect(() => { setCurrentPage(1); }, [searchTerm, trackFilter, statusFilter, filter]);
+
+  const totalPages = Math.max(1, Math.ceil(visible.length / ITEMS_PER_PAGE));
+  const pagedVisible = visible.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE,
+  );
+  const allPageSelected =
+    pagedVisible.length > 0 && pagedVisible.every((s) => selectedIds.has(s.id));
+  const somePageSelected =
+    !allPageSelected && pagedVisible.some((s) => selectedIds.has(s.id));
+
   async function handleDeleteConfirm() {
     if (!pendingDelete) return;
     try {
@@ -369,6 +387,51 @@ export default function SubmissionsClient({ filter }: { filter: SubmissionFilter
       setData((prev) => prev.map((s) => (s.id === id ? { ...s, status: "rejected" as const } : s)));
     } catch (rejectError) {
       setError(rejectError instanceof Error ? rejectError.message : "Unable to reject submission.");
+    }
+  }
+
+  function toggleRow(id: string) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  }
+
+  function toggleSelectAll() {
+    const pageIds = pagedVisible.map((s) => s.id);
+    if (allPageSelected) {
+      setSelectedIds((prev) => {
+        const next = new Set(prev);
+        pageIds.forEach((id) => next.delete(id));
+        return next;
+      });
+    } else {
+      setSelectedIds((prev) => {
+        const next = new Set(prev);
+        pageIds.forEach((id) => next.add(id));
+        return next;
+      });
+    }
+  }
+
+  async function handleBulkDelete() {
+    if (selectedIds.size === 0 || bulkDeleting) return;
+    setBulkDeleting(true);
+    const ids = Array.from(selectedIds);
+    try {
+      const results = await Promise.allSettled(ids.map((id) => deleteAdminSubmission(id)));
+      const deleted = ids.filter((_, i) => results[i].status === "fulfilled");
+      setData((prev) => prev.filter((s) => !deleted.includes(s.id)));
+      setSelectedIds((prev) => {
+        const next = new Set(prev);
+        deleted.forEach((id) => next.delete(id));
+        return next;
+      });
+      const failed = results.filter((r) => r.status === "rejected").length;
+      if (failed > 0) setError(`${failed} item(s) could not be deleted.`);
+    } finally {
+      setBulkDeleting(false);
     }
   }
 
@@ -453,8 +516,39 @@ export default function SubmissionsClient({ filter }: { filter: SubmissionFilter
         />
       </section>
 
+      {selectedIds.size > 0 && (
+        <div className={styles.bulkBar}>
+          <button
+            type="button"
+            className={styles.bulkDeleteBtn}
+            onClick={handleBulkDelete}
+            disabled={bulkDeleting}
+          >
+            {bulkDeleting
+              ? "// DELETING..."
+              : `[⌫] DELETE SELECTED (${selectedIds.size})`}
+          </button>
+          <span className={styles.bulkCount}>
+            {selectedIds.size} ROW{selectedIds.size !== 1 ? "S" : ""} SELECTED
+          </span>
+        </div>
+      )}
+
       <section className={styles.tablePanel}>
         <div className={styles.tableGrid}>
+          <div className={`${styles.tableHead} ${styles.checkCell}`}>
+            <input
+              type="checkbox"
+              className={styles.checkbox}
+              checked={allPageSelected}
+              ref={(el) => {
+                if (el) el.indeterminate = somePageSelected;
+              }}
+              onChange={toggleSelectAll}
+              aria-label="Select all on page"
+              disabled={pagedVisible.length === 0}
+            />
+          </div>
           <div className={styles.tableHead}>THUMBNAIL</div>
           <div className={styles.tableHead}>PROJECT</div>
           <div className={styles.tableHead}>TEAM</div>
@@ -467,8 +561,17 @@ export default function SubmissionsClient({ filter }: { filter: SubmissionFilter
           {visible.length === 0 ? (
             <div className={styles.emptyRow}>{EMPTY_MAP[filter]}</div>
           ) : (
-            visible.map((s) => (
+            pagedVisible.map((s) => (
               <div className={styles.tableRow} key={s.id}>
+                <div className={`${styles.tableCell} ${styles.checkCell}`}>
+                  <input
+                    type="checkbox"
+                    className={styles.checkbox}
+                    checked={selectedIds.has(s.id)}
+                    onChange={() => toggleRow(s.id)}
+                    aria-label={`Select ${s.projectName}`}
+                  />
+                </div>
                 <div className={styles.tableCell} data-label="THUMBNAIL">
                   <Thumbnail url={s.thumbnailUrl} alt={`${s.projectName} thumbnail`} />
                 </div>
@@ -501,6 +604,35 @@ export default function SubmissionsClient({ filter }: { filter: SubmissionFilter
             ))
           )}
         </div>
+
+        {totalPages > 1 && (
+          <div className={styles.pagination}>
+            <span className={styles.paginationInfo}>
+              {`// ${(currentPage - 1) * ITEMS_PER_PAGE + 1}–${Math.min(currentPage * ITEMS_PER_PAGE, visible.length)} OF ${visible.length}`}
+            </span>
+            <div className={styles.paginationControls}>
+              <button
+                type="button"
+                className={styles.paginationBtn}
+                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+              >
+                {"< BACK"}
+              </button>
+              <span className={styles.paginationPage}>
+                {`PAGE ${currentPage} OF ${totalPages}`}
+              </span>
+              <button
+                type="button"
+                className={styles.paginationBtn}
+                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                disabled={currentPage === totalPages}
+              >
+                {"NEXT >"}
+              </button>
+            </div>
+          </div>
+        )}
       </section>
 
       <AnimatePresence>

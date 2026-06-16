@@ -19,6 +19,7 @@ type JudgeRoleRow = {
 type AuthUserListItem = {
   id: string;
   email?: string | null;
+  last_sign_in_at?: string | null;
 };
 
 const JUDGE_ROLE = "JUDGE";
@@ -102,9 +103,9 @@ export async function GET(request: NextRequest) {
         authUser?.email ||
         `judge_${id}`;
 
-      return { id, username };
+      return { id, username, last_login: authUser?.last_sign_in_at ?? null };
     })
-    .filter((entry): entry is { id: string; username: string } => Boolean(entry));
+    .filter((entry): entry is { id: string; username: string; last_login: string | null } => Boolean(entry));
 
   return NextResponse.json({ judges });
 }
