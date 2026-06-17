@@ -46,6 +46,8 @@
   background: #ffffff;
   border: 1px solid #cc0000;
   box-shadow: 4px 4px 0 0 #cc0000;
+  display: flex;
+  flex-direction: column;
 }
 
 .panelHead {
@@ -67,9 +69,11 @@
 }
 
 .panelBody {
-  padding: 20px 18px;
-  display: grid;
+  padding: 20px 18px 14px;
+  display: flex;
+  flex-direction: column;
   gap: 16px;
+  flex: 1;
 }
 
 /* ── Config rows (label + control) ───────────── */
@@ -238,12 +242,11 @@
   justify-content: space-between;
   gap: 16px;
   border-bottom: 1px solid #e5e0d8;
-  padding-bottom: 14px;
+  flex: 1;
 }
 
 .criteriaRow:last-child {
   border-bottom: 0;
-  padding-bottom: 0;
 }
 
 .criteriaLabel {
@@ -264,7 +267,7 @@
   font-size: 10px;
   line-height: 14px;
   color: #888888;
-  margin-top: 12px;
+  margin-top: 0;
   display: flex;
   justify-content: flex-end;
   gap: 4px;
@@ -293,6 +296,14 @@
 
 .trackInfo {
   min-width: 0;
+  flex: 1;
+}
+
+.trackActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
 }
 
 .trackId {
@@ -311,8 +322,10 @@
 /* ── Admin session panel ──────────────────────── */
 
 .sessionInfo {
-  display: grid;
-  gap: 10px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  flex: 1;
   padding-bottom: 18px;
   border-bottom: 1px solid #e5e0d8;
   margin-bottom: 18px;
@@ -345,11 +358,12 @@
 }
 
 .logoutBtn {
-  display: inline-flex;
+  display: flex;
   align-items: center;
   gap: 6px;
   min-height: 32px;
   padding: 6px 14px;
+  margin-top: auto;
   background: #cc0000;
   border: 1px solid #cc0000;
   color: #ffffff;
@@ -383,9 +397,9 @@
 }
 
 .judgeTable {
-  min-width: 440px;
+  min-width: 620px;
   display: grid;
-  grid-template-columns: minmax(120px, 1.2fr) minmax(120px, 1.2fr) 90px 150px;
+  grid-template-columns: minmax(100px, 1fr) minmax(120px, 1.2fr) 80px minmax(140px, 1fr) 150px;
   align-items: stretch;
   border-bottom: 1px solid #e5e0d8;
 }
@@ -620,7 +634,11 @@
 }
 
 .panelFooter {
-  padding: 14px 18px 18px;
+  padding: 8px 18px 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
 }
 
 .addJudgeBtn {
@@ -652,6 +670,127 @@
 .addJudgeBtn:disabled {
   opacity: 0.45;
   cursor: default;
+}
+
+/* ── Reset button (secondary action) ─────────── */
+
+.resetBtn {
+  display: inline-flex;
+  align-items: center;
+  min-height: 30px;
+  padding: 6px 14px;
+  background: transparent;
+  border: 1px solid #888888;
+  color: #555555;
+  font-family: var(--font-admin-mono), monospace;
+  font-size: 11px;
+  line-height: 14px;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.resetBtn:hover {
+  border-color: #1a1a1a;
+  color: #1a1a1a;
+}
+
+/* ── Track management ─────────────────────────── */
+
+.trackAddSection {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-top: 14px;
+  border-top: 1px solid #e5e0d8;
+  margin-top: auto;
+}
+
+.trackAddInput {
+  flex: 1;
+  min-width: 0;
+  height: 32px;
+  padding: 0 8px;
+  background: #ffffff;
+  border: 1px solid #1a1a1a;
+  color: #1a1a1a;
+  font-family: var(--font-admin-mono), monospace;
+  font-size: 11px;
+  line-height: 14px;
+  box-shadow: 2px 2px 0 0 #888888;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.trackAddInput:hover:not(:focus) {
+  border-color: #cc0000;
+  box-shadow: 2px 2px 0 0 #cc0000;
+}
+
+.trackAddInput:focus {
+  outline: none;
+  border-color: #cc0000;
+  box-shadow: 2px 2px 0 0 #cc0000;
+}
+
+.trackAddInput::placeholder {
+  color: #888888;
+  text-transform: uppercase;
+}
+
+.trackAddBtn {
+  flex-shrink: 0;
+  height: 32px;
+  padding: 0 12px;
+  background: #1a1a1a;
+  border: 1px solid #1a1a1a;
+  color: #f5f0e8;
+  font-family: var(--font-admin-mono), monospace;
+  font-size: 10px;
+  line-height: 14px;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.trackAddBtn:hover:not(:disabled) {
+  background: #cc0000;
+  border-color: #cc0000;
+}
+
+.trackAddBtn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.removeTrackBtn {
+  flex-shrink: 0;
+  height: 22px;
+  padding: 0 8px;
+  background: transparent;
+  border: 1px solid #cc0000;
+  color: #cc0000;
+  font-family: var(--font-admin-mono), monospace;
+  font-size: 10px;
+  line-height: 13px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.12s, color 0.12s;
+}
+
+.removeTrackBtn:hover {
+  background: #cc0000;
+  color: #ffffff;
+}
+
+.customTrackBadge {
+  display: inline-block;
+  font-size: 9px;
+  line-height: 12px;
+  color: #888888;
+  border: 1px solid #d0c8bc;
+  padding: 1px 5px;
+  letter-spacing: 0.04em;
 }
 
 /* ── Divider ──────────────────────────────────── */
@@ -697,7 +836,7 @@
 }
 
 .updateSuccessMsg {
-  margin-top: 10px;
+  margin: 0;
   font-family: "IBM Plex Mono", monospace;
   font-size: 11px;
   font-weight: 700;
@@ -756,7 +895,10 @@
   .editBtn,
   .deleteBtn,
   .addJudgeBtn,
-  .updateBtn {
+  .updateBtn,
+  .resetBtn,
+  .trackAddBtn,
+  .trackAddInput {
     min-height: 44px;
   }
 
@@ -777,8 +919,8 @@
   }
 
   .judgeTable {
-    min-width: 560px;
-    grid-template-columns: minmax(120px, 1.1fr) minmax(140px, 1.2fr) 100px 200px;
+    min-width: 720px;
+    grid-template-columns: minmax(100px, 1fr) minmax(130px, 1.2fr) 90px minmax(150px, 1fr) 200px;
   }
 
   .judgeActions,

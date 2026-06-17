@@ -167,6 +167,11 @@ export async function PATCH(request: NextRequest) {
     "presentation_quality_value",
   ];
   const isCriteriaUpdate = criteriaKeys.some((k) => k in updatePayload);
+  const isSubmissionConfigUpdate =
+    !isCriteriaUpdate &&
+    ["max_team_size", "max_file_size", "deadline", "submission_status", "resubmission_status", "active_tracks"].some(
+      (k) => k in updatePayload,
+    );
 
   if (isCriteriaUpdate) {
     void insertSubmissionLog({
@@ -174,6 +179,13 @@ export async function PATCH(request: NextRequest) {
       action: "CRITERIA_UPDATED",
       performedBy: auth.session.username,
       note: `Admin ${auth.session.username} updated judging criteria`,
+    }).catch(() => {});
+  } else if (isSubmissionConfigUpdate) {
+    void insertSubmissionLog({
+      submissionId: null,
+      action: "SETTINGS_UPDATED",
+      performedBy: auth.session.username,
+      note: `Admin ${auth.session.username} updated submission configuration`,
     }).catch(() => {});
   }
 

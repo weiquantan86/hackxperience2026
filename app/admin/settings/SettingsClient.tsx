@@ -117,11 +117,12 @@ function SubmissionConfigPanel({
   deadline: string | null | undefined;
   onToggleSubmissionsOpen: () => void;
   onToggleResubmissions: () => void;
-  onSaveConfig: (maxTeamSize: number, maxFileSizeMb: number) => void;
+  onSaveConfig: (maxTeamSize: number, maxFileSizeMb: number) => Promise<void>;
   onDeadlineSave: (isoString: string) => void;
 }) {
   const [teamSizeRaw, setTeamSizeRaw] = useState(String(maxTeamSize));
   const [fileSizeRaw, setFileSizeRaw] = useState(String(maxFileSizeMb));
+  const [saveSuccess, setSaveSuccess] = useState(false);
 
   useEffect(() => { setTeamSizeRaw(String(maxTeamSize)); }, [maxTeamSize]);
   useEffect(() => { setFileSizeRaw(String(maxFileSizeMb)); }, [maxFileSizeMb]);
@@ -129,6 +130,13 @@ function SubmissionConfigPanel({
   const teamSizeError = teamSizeRaw === "" || parseInt(teamSizeRaw, 10) <= 0;
   const fileSizeError = fileSizeRaw === "" || parseInt(fileSizeRaw, 10) <= 0;
   const hasErrors = teamSizeError || fileSizeError;
+
+  async function handleSaveConfig() {
+    if (hasErrors) return;
+    await onSaveConfig(parseInt(teamSizeRaw, 10), parseInt(fileSizeRaw, 10));
+    setSaveSuccess(true);
+    setTimeout(() => setSaveSuccess(false), 3000);
+  }
 
   return (
     <section className={styles.panel}>
@@ -208,13 +216,21 @@ function SubmissionConfigPanel({
           type="button"
           className={styles.updateBtn}
           disabled={hasErrors}
-          onClick={() => {
-            if (hasErrors) return;
-            onSaveConfig(parseInt(teamSizeRaw, 10), parseInt(fileSizeRaw, 10));
-          }}
+          onClick={() => void handleSaveConfig()}
         >
           [ UPDATE ]
         </button>
+        <button
+          type="button"
+          className={styles.resetBtn}
+          onClick={() => {
+            setTeamSizeRaw(String(DEFAULT_TEAM_SIZE));
+            setFileSizeRaw(String(DEFAULT_FILE_SIZE_MB));
+          }}
+        >
+          [ RESET ]
+        </button>
+        {saveSuccess && <p className={styles.updateSuccessMsg}>&gt; SAVED!</p>}
       </div>
     </section>
   );
@@ -324,6 +340,19 @@ function JudgingCriteriaPanel({
         >
           [ UPDATE ]
         </button>
+        <button
+          type="button"
+          className={styles.resetBtn}
+          onClick={() =>
+            setRawValues(
+              Object.fromEntries(
+                criteria.map((c) => [c.key, String(DEFAULT_JUDGING[c.key])])
+              ) as Record<Criterion["key"], string>
+            )
+          }
+        >
+          [ RESET ]
+        </button>
         {updateSuccess && (
           <p className={styles.updateSuccessMsg}>&gt; UPDATE SUCCESSFUL!</p>
         )}
@@ -339,29 +368,107 @@ function TracksPanel({
   activeTracks: Set<string>;
   onToggleTrack: (track: string) => void;
 }) {
+  const [newTrackInput, setNewTrackInput] = useState("");
+
+  // Local list of custom track names — persists even when a custom track is toggled off,
+  // so the row stays visible and only an explicit [ X ] removes it entirely.
+  const [localCustomTracks, setLocalCustomTracks] = useState<string[]>(() =>
+    Array.from(activeTracks).filter(
+      (t) => !HACKX_TRACKS.includes(t as (typeof HACKX_TRACKS)[number])
+    )
+  );
+
+  // Merge server-side custom tracks that arrive after the initial load (e.g. settings fetch).
+  useEffect(() => {
+    setLocalCustomTracks((prev) => {
+      const incoming = Array.from(activeTracks).filter(
+        (t) => !HACKX_TRACKS.includes(t as (typeof HACKX_TRACKS)[number])
+      );
+      const next = [...prev];
+      for (const t of incoming) {
+        if (!next.includes(t)) next.push(t);
+      }
+      return next.length === prev.length && next.every((t, i) => t === prev[i]) ? prev : next;
+    });
+  }, [activeTracks]);
+
+  const allTracks = useMemo(
+    () => [...HACKX_TRACKS, ...localCustomTracks],
+    [localCustomTracks]
+  );
+
+  function handleAdd() {
+    const trimmed = newTrackInput.trim();
+    const alreadyExists =
+      HACKX_TRACKS.includes(trimmed as (typeof HACKX_TRACKS)[number]) ||
+      localCustomTracks.includes(trimmed);
+    if (!trimmed || alreadyExists) return;
+    setLocalCustomTracks((prev) => [...prev, trimmed]);
+    onToggleTrack(trimmed);
+    setNewTrackInput("");
+  }
+
+  function handleDeleteCustom(track: string) {
+    if (activeTracks.has(track)) onToggleTrack(track);
+    setLocalCustomTracks((prev) => prev.filter((t) => t !== track));
+  }
+
   return (
     <section className={styles.panel}>
       <div className={styles.panelHead}>
         <h3>&gt; TRACKS</h3>
       </div>
       <div className={styles.panelBody}>
-        {HACKX_TRACKS.map((track, index) => {
-          const id = `TRACK_0${index + 1}`;
+        {allTracks.map((track, index) => {
+          const id = `TRACK_${String(index + 1).padStart(2, "0")}`;
           const enabled = activeTracks.has(track);
+          const isCustom = !HACKX_TRACKS.includes(track as (typeof HACKX_TRACKS)[number]);
           return (
             <div key={track} className={styles.trackRow}>
               <div className={styles.trackInfo}>
                 <div className={styles.trackId}>{id}</div>
                 <div className={styles.trackName}>{track}</div>
               </div>
-              <Toggle
-                on={enabled}
-                onToggle={() => onToggleTrack(track)}
-                label={`Toggle ${id}`}
-              />
+              <div className={styles.trackActions}>
+                {isCustom && (
+                  <button
+                    type="button"
+                    className={styles.removeTrackBtn}
+                    onClick={() => handleDeleteCustom(track)}
+                    aria-label={`Delete track ${track}`}
+                  >
+                    [ X ]
+                  </button>
+                )}
+                <Toggle on={enabled} onToggle={() => onToggleTrack(track)} label={`Toggle ${id}`} />
+              </div>
             </div>
           );
         })}
+
+        <div className={styles.trackAddSection}>
+          <input
+            type="text"
+            className={styles.trackAddInput}
+            value={newTrackInput}
+            placeholder="new_track_name"
+            onChange={(e) => setNewTrackInput(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter") handleAdd(); }}
+            aria-label="New track name"
+          />
+          <button
+            type="button"
+            className={styles.trackAddBtn}
+            onClick={handleAdd}
+            disabled={
+              !newTrackInput.trim() ||
+              HACKX_TRACKS.includes(newTrackInput.trim() as (typeof HACKX_TRACKS)[number]) ||
+              localCustomTracks.includes(newTrackInput.trim())
+            }
+          >
+            [ ADD ]
+          </button>
+        </div>
       </div>
     </section>
   );
@@ -472,8 +579,9 @@ function JudgeAccountsPanel({
 
       <div className={styles.judgeTableScroll}><div className={styles.judgeTable}>
         <div className={styles.tableHead}>JUDGE_ID</div>
-        <div className={styles.tableHead}>NAME</div>
+        <div className={styles.tableHead}>JUDGE NAME</div>
         <div className={styles.tableHead}>STATUS</div>
+        <div className={styles.tableHead}>LAST LOGGED IN</div>
         <div className={styles.tableHead}>ACTIONS</div>
 
         {judges.map((judge) =>
@@ -488,7 +596,7 @@ function JudgeAccountsPanel({
                   aria-label="Judge ID"
                 />
               </div>
-              <div className={styles.addFormCell} data-label="NAME">
+              <div className={styles.addFormCell} data-label="JUDGE NAME">
                 <input
                   type="text"
                   className={styles.addInput}
@@ -506,6 +614,9 @@ function JudgeAccountsPanel({
               <div className={styles.addFormCell} data-label="STATUS">
                 <span className={styles.statusActive}>ACTIVE</span>
               </div>
+              <div className={styles.addFormCell} data-label="LAST LOGGED IN">
+                <span style={{ color: "#888888", fontSize: 10 }}>—</span>
+              </div>
               <div className={styles.addFormCell} data-label="ACTIONS">
                 <div className={styles.addFormActions}>
                   <button type="button" className={styles.confirmBtn} onClick={() => void confirmEdit()} aria-label="Confirm edit">
@@ -520,14 +631,17 @@ function JudgeAccountsPanel({
           ) : (
             <div className={styles.judgeRow} key={judge.id}>
               <div className={styles.judgeCell} data-label="JUDGE_ID">{judge.id}</div>
-              <div className={styles.judgeCell} data-label="NAME">{judge.username}</div>
+              <div className={styles.judgeCell} data-label="JUDGE NAME">{judge.username}</div>
               <div className={styles.judgeCell} data-label="STATUS">
                 <span className={styles.statusActive}>ACTIVE</span>
+              </div>
+              <div className={styles.judgeCell} data-label="LAST LOGGED IN">
+                {formatLastLogin(judge.last_login)}
               </div>
               <div className={styles.judgeCell} data-label="ACTIONS">
                 <div className={styles.judgeActions}>
                   <button type="button" className={styles.editBtn} onClick={() => startEdit(judge)}>
-                    EDIT
+                    [ EDIT ]
                   </button>
                   <button type="button" className={styles.deleteBtn} aria-label="Delete judge" onClick={() => void onDelete(judge.id)}>
                     <Trash2 aria-hidden="true" />
@@ -541,6 +655,9 @@ function JudgeAccountsPanel({
         {adding && (
           <div className={styles.addFormRow}>
             <div className={styles.addFormCell} data-label="JUDGE_ID">
+              <span style={{ color: "#888888", fontSize: 10 }}>// AUTO</span>
+            </div>
+            <div className={styles.addFormCell} data-label="JUDGE NAME">
               <input
                 type="text"
                 className={styles.addInput}
@@ -551,7 +668,10 @@ function JudgeAccountsPanel({
                 autoFocus
               />
             </div>
-            <div className={styles.addFormCell} data-label="NAME">
+            <div className={styles.addFormCell} data-label="STATUS">
+              <span className={styles.statusActive}>ACTIVE</span>
+            </div>
+            <div className={styles.addFormCell} data-label="LAST LOGGED IN">
               <input
                 type="password"
                 className={styles.addInput}
@@ -564,9 +684,6 @@ function JudgeAccountsPanel({
                 }}
                 aria-label="New judge password"
               />
-            </div>
-            <div className={styles.addFormCell} data-label="STATUS">
-              <span className={styles.statusActive}>ACTIVE</span>
             </div>
             <div className={styles.addFormCell} data-label="ACTIONS">
               <div className={styles.addFormActions}>
@@ -595,6 +712,28 @@ function JudgeAccountsPanel({
       </div>
     </section>
   );
+}
+
+const DEFAULT_TEAM_SIZE = 5;
+const DEFAULT_FILE_SIZE_MB = 10;
+const DEFAULT_JUDGING: Record<Criterion["key"], number> = {
+  technical_execution_value: 30,
+  problem_solution_fit_value: 25,
+  innovation_creativity_value: 25,
+  presentation_quality_value: 20,
+};
+
+function formatLastLogin(iso: string | null | undefined): string {
+  if (!iso) return "—";
+  return new Date(iso).toLocaleString("en-SG", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone: "Asia/Singapore",
+    hour12: false,
+  });
 }
 
 function formatDuration(ms: number) {
@@ -757,7 +896,7 @@ export default function SettingsClient() {
           maxTeamSize={settings?.max_team_size ?? 5}
           maxFileSizeMb={settings?.max_file_size ?? 10}
           deadline={settings?.deadline}
-          onSaveConfig={(ts, fs) => void patchSettings({ max_team_size: ts, max_file_size: fs })}
+          onSaveConfig={(ts, fs) => patchSettings({ max_team_size: ts, max_file_size: fs })}
           onDeadlineSave={(iso) => void patchSettings({ deadline: iso })}
         />
 

@@ -30,6 +30,7 @@ export type AdminSettingsRow = {
 export type AdminJudge = {
   id: string;
   username: string;
+  last_login?: string | null;
 };
 
 async function parseJson<T>(response: Response): Promise<T> {
