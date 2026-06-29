@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { IBM_Plex_Mono, Montserrat } from "next/font/google";
-import { TEAM_REGISTRATION_URL } from "@/lib/site-links";
+import { TEAM_REGISTRATION_URL, TELEGRAM_URL } from "@/lib/site-links";
 import { HACKATHON_THEME } from "@/lib/hackathon-content";
 // import DecryptedTimerText from './ui/DecryptedText';
 
@@ -61,7 +61,7 @@ const Hero: React.FC = () => {
           <div className="absolute bottom-2 right-2 w-4 h-4 border-b-2 border-r-2" style={{ borderColor: RED }}></div>
           
           <div 
-            className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1550751827-4bd374c3f58b?auto=format&fit=crop&q=80&w=1200')] bg-cover bg-center mix-blend-screen opacity-50 grayscale" 
+            className="absolute inset-0 bg-[url('/hero-hackxperience-2026.png')] bg-cover bg-center mix-blend-screen opacity-70" 
           ></div>
 
           <div className="relative h-full flex flex-col justify-end p-4 md:p-6 bg-linear-to-t from-black/90 to-transparent">
@@ -123,7 +123,7 @@ const Hero: React.FC = () => {
                   </a>
                 ) : null}
                 <a
-                  href="https://t.me/+M4VYyn6OxJY0OGI1"
+                  href={TELEGRAM_URL}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-block w-full sm:w-auto"
@@ -153,7 +153,7 @@ const Hero: React.FC = () => {
                       }
                     }}
                   >
-                    join ITClub telegram
+                    join SIM ITCommunity
                   </button>
                 </a>
               </div>

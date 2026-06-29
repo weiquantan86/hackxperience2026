@@ -18,10 +18,10 @@ const EVENTS = [
     meta: 'SIM CAMPUS',
   },
   {
-    date: 'DATES_PENDING',
+    date: '25 JUL 2026',
     title: 'SUBMISSION DEADLINE',
-    time: '',
-    meta: '',
+    time: '12:00 PM',
+    meta: 'SGT · PROJECT PORTAL',
   },
   {
     date: '25 JUL 2026',
@@ -59,14 +59,8 @@ const JUDGES = [
 ]
 
 const SPONSORS = [
-  { name: 'GOLD SPONSOR', tier: 'gold', img: null },
-  { name: 'GOLD SPONSOR', tier: 'gold', img: null },
-  { name: 'SILVER SPONSOR', tier: 'silver', img: null },
-  { name: 'SILVER SPONSOR', tier: 'silver', img: null },
-  { name: 'SILVER SPONSOR', tier: 'silver', img: null },
-  { name: 'BRONZE SPONSOR', tier: 'bronze', img: null },
-  { name: 'BRONZE SPONSOR', tier: 'bronze', img: null },
-  { name: 'BRONZE SPONSOR', tier: 'bronze', img: null },
+  { name: 'DynamicWeb', tier: 'gold', img: '/sponsors/dynamicweb.png', url: 'https://dynamicweb.com/' },
+  { name: 'IAMCP', tier: 'gold', img: '/sponsors/iamcp.png', url: 'https://www.iamcp.org/' },
 ]
 
 function SectionHeader({ title, subtitle }) {
@@ -263,7 +257,13 @@ function SponsorRow({ tier, sponsors }) {
               className={`flex-1 min-w-20 border border-gray-700 flex items-center justify-center hover:border-gray-500 transition-colors duration-200 ${cardHeight}`}
             >
               {s.img ? (
-                <img src={s.img} alt={s.name} className="object-contain grayscale brightness-75 hover:brightness-100 transition-all duration-200 max-w-16 sm:max-w-24 max-h-8 sm:max-h-10" />
+                s.url ? (
+                  <a href={s.url} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center w-full h-full p-3 sm:p-4">
+                    <img src={s.img} alt={s.name} className={`object-contain transition-all duration-200 ${tier === 'gold' ? 'max-h-10 sm:max-h-14 max-w-[85%]' : 'max-w-16 sm:max-w-24 max-h-8 sm:max-h-10 grayscale brightness-75 hover:brightness-100'}`} />
+                  </a>
+                ) : (
+                  <img src={s.img} alt={s.name} className={`object-contain transition-all duration-200 ${tier === 'gold' ? 'max-h-10 sm:max-h-14 max-w-[85%]' : 'max-w-16 sm:max-w-24 max-h-8 sm:max-h-10 grayscale brightness-75 hover:brightness-100'}`} />
+                )
               ) : (
                 <div className="text-gray-300 text-xs sm:text-sm font-bold tracking-wider font-mono text-center px-2">{s.name}</div>
               )}
@@ -309,10 +309,10 @@ export default function TimeLine() {
           </div>
         </div>
 
-        {/* <SectionHeader title="SPONSORS_AND_PARTNERS" subtitle="// ORGANISATIONS MAKING THIS POSSIBLE" />
+        <SectionHeader title="SPONSORS_AND_PARTNERS" subtitle="// ORGANISATIONS MAKING THIS POSSIBLE" />
         {gold.length   > 0 && <SponsorRow tier="gold"   sponsors={gold}   />}
         {silver.length > 0 && <SponsorRow tier="silver" sponsors={silver} />}
-        {bronze.length > 0 && <SponsorRow tier="bronze" sponsors={bronze} />} */}
+        {bronze.length > 0 && <SponsorRow tier="bronze" sponsors={bronze} />}
 
         <div className="w-full h-px bg-red-700 mt-12 sm:mt-20 mb-8 sm:mb-16" />
 

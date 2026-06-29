@@ -1,5 +1,5 @@
 import { IBM_Plex_Mono, Montserrat } from "next/font/google";
-import { TEAM_REGISTRATION_URL, LOOKING_FOR_TEAM_URL } from "@/lib/site-links";
+import { TEAM_REGISTRATION_URL, LOOKING_FOR_TEAM_URL, TELEGRAM_URL } from "@/lib/site-links";
 
 const ibmPlexMono = IBM_Plex_Mono({
   subsets: ["latin"],
@@ -43,12 +43,12 @@ export default function TimelineCta() {
             </a>
           ) : (
             <a
-              href="https://t.me/+M4VYyn6OxJY0OGI1"
+              href={TELEGRAM_URL}
               target="_blank"
               rel="noopener noreferrer"
               className="w-full sm:w-auto bg-[#1a1a1a] px-10 sm:px-14 py-5 text-[13px] sm:text-[15px] font-bold tracking-[0.12em] uppercase cursor-pointer shadow-[5px_5px_0_0_rgba(255,255,255,0.25)] hover:brightness-125 active:translate-y-[1px] transition text-center inline-block"
             >
-              JOIN TELEGRAM CHANNEL
+              JOIN SIM ITCOMMUNITY
             </a>
           )}
 

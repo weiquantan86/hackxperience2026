@@ -13,14 +13,12 @@ const montserrat = Montserrat({
   weight: ["800", "900"],
 });
 
-import { TEAM_REGISTRATION_URL, LOOKING_FOR_TEAM_URL } from "@/lib/site-links";
+import { TEAM_REGISTRATION_URL, LOOKING_FOR_TEAM_URL, TELEGRAM_URL } from "@/lib/site-links";
 import { MICROSOFT_FOUNDRY_WORKSHOP } from "@/lib/hackathon-pre-events";
-
-const TELEGRAM_URL = "https://t.me/+M4VYyn6OxJY0OGI1";
 
 const TelegramLink = () => (
   <a href={TELEGRAM_URL} target="_blank" rel="noopener noreferrer" className="text-[#c00000] underline underline-offset-2 hover:text-[#a00000]">
-    Telegram group
+    SIM ITCommunity Telegram group
   </a>
 );
 
@@ -116,7 +114,7 @@ const FAQ_DATA: FaqCategory[] = [
         question: "WHAT IS THE MICROSOFT FOUNDRY WORKSHOP ABOUT?",
         answer: (
           <>
-            A pre-hackathon workshop on <strong>17 July 2026</strong> covering agentic AI with Microsoft Foundry — including agent fundamentals, Foundry models and workflows, multi-agent design, hands-on agent builds, and responsible AI. Venue at SIM Campus; exact time TBA. Join our <TelegramLink /> for updates.
+            A pre-hackathon workshop on <strong>17 July 2026, 7:00–10:00 PM</strong> covering agentic AI with Microsoft Foundry — including agent fundamentals, Foundry models and workflows, multi-agent design, hands-on agent builds, and responsible AI at SIM Campus. Join our <TelegramLink /> for room details and updates.
             <ul className="list-disc pl-5 mt-2 space-y-1">
               {MICROSOFT_FOUNDRY_WORKSHOP.topics.map((topic) => (
                 <li key={topic}>{topic}</li>

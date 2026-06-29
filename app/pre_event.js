@@ -7,13 +7,13 @@ const PRE_EVENTS = [
   },
   {
     date: '17 JUL 2026',
-    time: '',
+    time: '7:00 PM - 10:00 PM',
     title: 'BUILDING AGENTIC AI: MICROSOFT FOUNDRY WORKSHOP',
-    meta: 'SIM CAMPUS · TIME TBA',
+    meta: 'SIM CAMPUS',
   },
 ]
 
-const TELEGRAM_LINK = 'https://t.me/+M4VYyn6OxJY0OGI1'
+const TELEGRAM_LINK = 'https://t.me/+o_3QtjEFmNFhYmFl'
 
 function SectionHeader({ title, subtitle }) {
   return (
