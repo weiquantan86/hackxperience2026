@@ -1,3 +1,5 @@
+"use client";
+
 import React from "react";
 import {
   HACKATHON_PRIZES,
@@ -5,6 +7,8 @@ import {
   PRIZE_CURRENCY_NOTE,
   type PrizeAward,
 } from "@/lib/hackathon-prizes";
+import { HoverLift, RevealItem, RevealStagger } from "./ui/motion-ui";
+import { motion, useReducedMotion } from "framer-motion";
 
 const RED = "#c00000";
 const DARK_BG = "#1d1c17";
@@ -12,10 +16,32 @@ const CREAM_BG = "#f2ede5";
 const WHITE = "#ffffff";
 const TEXT_DIM = "rgba(255, 255, 255, 0.7)";
 
+function TierPill({ children }: { children: React.ReactNode }) {
+  const reduceMotion = useReducedMotion();
+  if (reduceMotion) {
+    return (
+      <div className="px-4 py-3 border border-white/15 min-w-[120px]" style={{ backgroundColor: "rgba(255,255,255,0.04)" }}>
+        {children}
+      </div>
+    );
+  }
+
+  return (
+    <motion.div
+      className="px-4 py-3 border border-white/15 min-w-[120px]"
+      style={{ backgroundColor: "rgba(255,255,255,0.04)" }}
+      whileHover={{ scale: 1.04, borderColor: "rgba(192, 0, 0, 0.5)" }}
+      transition={{ type: "spring", stiffness: 420, damping: 20 }}
+    >
+      {children}
+    </motion.div>
+  );
+}
+
 function PrizeCard({ award }: { award: PrizeAward }) {
   return (
-    <div
-      className="p-6 md:p-8"
+    <HoverLift
+      className="h-full p-6 md:p-8"
       style={{
         backgroundColor: DARK_BG,
         color: WHITE,
@@ -38,11 +64,7 @@ function PrizeCard({ award }: { award: PrizeAward }) {
 
       <div className="flex flex-wrap gap-3">
         {award.tiers.map((tier) => (
-          <div
-            key={tier.label}
-            className="px-4 py-3 border border-white/15 min-w-[120px]"
-            style={{ backgroundColor: "rgba(255,255,255,0.04)" }}
-          >
+          <TierPill key={tier.label}>
             <div className="font-mono text-[10px] uppercase tracking-widest" style={{ color: RED }}>
               {tier.label}
             </div>
@@ -50,10 +72,10 @@ function PrizeCard({ award }: { award: PrizeAward }) {
             {tier.note ? (
               <div className="mt-1 text-[10px] sm:text-xs leading-relaxed opacity-70">{tier.note}</div>
             ) : null}
-          </div>
+          </TierPill>
         ))}
       </div>
-    </div>
+    </HoverLift>
   );
 }
 
@@ -65,32 +87,34 @@ const Prizes: React.FC = () => {
       style={{ fontFamily: "Montserrat", backgroundColor: CREAM_BG }}
     >
       <div className="mx-auto w-full max-w-7xl px-6 sm:px-10 md:px-12">
-      <div className="mb-10 md:mb-14">
-        <div
-          className="inline-block px-3 py-1.5 font-mono uppercase text-[10px] md:text-xs tracking-widest font-bold mb-5"
-          style={{ backgroundColor: RED, color: WHITE }}
-        >
-          // PRIZE POOL
+        <div className="mb-10 md:mb-14">
+          <div
+            className="inline-block px-3 py-1.5 font-mono uppercase text-[10px] md:text-xs tracking-widest font-bold mb-5"
+            style={{ backgroundColor: RED, color: WHITE }}
+          >
+            // PRIZE POOL
+          </div>
+          <h2
+            className="text-3xl sm:text-4xl md:text-5xl font-black uppercase tracking-tight mb-4"
+            style={{ color: DARK_BG }}
+          >
+            WIN BIG. BUILD BOLD.
+          </h2>
+          <p className="text-base sm:text-lg opacity-80 font-medium" style={{ color: DARK_BG }}>
+            Over <strong>{PRIZE_POOL_TOTAL}</strong> in track prizes, sponsor awards, and community votes, across Care Forward, Friction To Flow, and special categories.
+          </p>
+          <p className="mt-2 font-mono text-[11px] sm:text-xs tracking-widest uppercase opacity-70" style={{ color: DARK_BG }}>
+            // {PRIZE_CURRENCY_NOTE}
+          </p>
         </div>
-        <h2
-          className="text-3xl sm:text-4xl md:text-5xl font-black uppercase tracking-tight mb-4"
-          style={{ color: DARK_BG }}
-        >
-          WIN BIG. BUILD BOLD.
-        </h2>
-        <p className="text-base sm:text-lg opacity-80 font-medium" style={{ color: DARK_BG }}>
-          Over <strong>{PRIZE_POOL_TOTAL}</strong> in track prizes, sponsor awards, and community votes, across Care Forward, Friction To Flow, and special categories.
-        </p>
-        <p className="mt-2 font-mono text-[11px] sm:text-xs tracking-widest uppercase opacity-70" style={{ color: DARK_BG }}>
-          // {PRIZE_CURRENCY_NOTE}
-        </p>
-      </div>
 
-      <div className="grid md:grid-cols-2 gap-6 md:gap-8">
-        {HACKATHON_PRIZES.map((award) => (
-          <PrizeCard key={award.id} award={award} />
-        ))}
-      </div>
+        <RevealStagger className="grid md:grid-cols-2 gap-6 md:gap-8" stagger={0.09}>
+          {HACKATHON_PRIZES.map((award) => (
+            <RevealItem key={award.id}>
+              <PrizeCard award={award} />
+            </RevealItem>
+          ))}
+        </RevealStagger>
       </div>
     </section>
   );

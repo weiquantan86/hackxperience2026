@@ -22,14 +22,14 @@ export default function Home() {
       <Navbar/>
       <Hero/>
       <Reveal><About/></Reveal>
-      <Reveal><Tracks/></Reveal>
-      <Reveal><Prizes/></Reveal>
-      <Reveal><PastEvents/></Reveal>
-      <Reveal><PreEvent/></Reveal>
-      <Reveal><TimeLine/></Reveal>
-      <Reveal><Faq/></Reveal>
-      <Reveal><Committee/></Reveal>
-      <Reveal><TimelineCta/></Reveal>
+      <Reveal delay={0.05}><Tracks/></Reveal>
+      <Reveal delay={0.05}><Prizes/></Reveal>
+      <Reveal delay={0.05}><PastEvents/></Reveal>
+      <Reveal delay={0.05}><PreEvent/></Reveal>
+      <Reveal delay={0.05} y={48}><TimeLine/></Reveal>
+      <Reveal delay={0.05}><Faq/></Reveal>
+      <Reveal delay={0.05}><Committee/></Reveal>
+      <Reveal delay={0.05} scale={0.95}><TimelineCta/></Reveal>
       <Footer/>
 
       {/* Floating action stack — Submit CTA sits above the scroll-to-top button */}

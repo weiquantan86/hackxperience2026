@@ -1,9 +1,13 @@
-import React, { useState, useEffect } from 'react';
-import { IBM_Plex_Mono, Montserrat } from "next/font/google";
+"use client";
+
+import React, { useState, useEffect } from "react";
+import { motion, useReducedMotion } from "framer-motion";
+import { HoverLift, RevealItem, RevealStagger } from "./ui/motion-ui";
 
 const PastEvents: React.FC = () => {
   const [activeYear, setActiveYear] = useState<'2025' | '2024'>('2025');
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const reduceMotion = useReducedMotion();
 
   // Color Palette Constants
   const RED = "#c00000";
@@ -78,19 +82,22 @@ const PastEvents: React.FC = () => {
         {/* Tabs / Year Selector */}
         <div className="flex gap-4 mb-10 overflow-x-auto pb-2">
           {(['2025', '2024'] as const).map((year) => (
-            <button
+            <motion.button
               key={year}
               onClick={() => setActiveYear(year)}
-              className="px-8 py-2 font-mono text-sm uppercase font-bold border-2 transition-transform active:translate-y-1 rounded-full whitespace-nowrap"
-              style={{ 
+              className="px-8 py-2 font-mono text-sm uppercase font-bold border-2 rounded-full whitespace-nowrap"
+              style={{
                 borderColor: DARK_TEXT,
                 backgroundColor: activeYear === year ? RED : WHITE,
                 color: activeYear === year ? WHITE : DARK_TEXT,
-                boxShadow: activeYear === year ? `0px 0px 0px ${DARK_TEXT}` : `3px 3px 0px ${DARK_TEXT}`
+                boxShadow: activeYear === year ? `0px 0px 0px ${DARK_TEXT}` : `3px 3px 0px ${DARK_TEXT}`,
               }}
+              whileHover={reduceMotion ? undefined : { y: -2, scale: 1.02 }}
+              whileTap={reduceMotion ? undefined : { y: 1, scale: 0.98 }}
+              layout
             >
               {year}
-            </button>
+            </motion.button>
           ))}
         </div>
 
@@ -99,7 +106,12 @@ const PastEvents: React.FC = () => {
           <div className="flex flex-col lg:flex-row gap-8 lg:gap-12 items-stretch">
             
             {/* Image Container */}
-            <div className="relative w-full lg:w-[40%] shrink-0">
+            <RevealItem>
+            <motion.div
+              className="relative w-full lg:w-[40%] shrink-0"
+              whileHover={reduceMotion ? undefined : { y: -4 }}
+              transition={{ type: "spring", stiffness: 360, damping: 22 }}
+            >
               {/* Brutalist Red Offset Shadow */}
               <div className="absolute inset-0 translate-x-3 translate-y-3 -z-10" style={{ backgroundColor: RED }}></div>
               
@@ -135,17 +147,18 @@ const PastEvents: React.FC = () => {
                 </div>
 
               </div>
-            </div>
+            </motion.div>
+            </RevealItem>
 
             {/* Stats Container */}
-            <div className="w-full lg:w-[60%] grid grid-cols-1 sm:grid-cols-3 gap-6">
+            <RevealStagger className="w-full lg:w-[60%] grid grid-cols-1 sm:grid-cols-3 gap-6" stagger={0.08}>
               {current.stats.map((stat) => (
-                <div 
-                  key={stat.label}
-                  className="py-10 px-4 border-2 flex flex-col items-center justify-center transition-transform hover:translate-y-1 bg-white"
-                  style={{ 
+                <RevealItem key={stat.label}>
+                <HoverLift
+                  className="py-10 px-4 border-2 flex flex-col items-center justify-center bg-white h-full"
+                  style={{
                     borderColor: DARK_TEXT,
-                    boxShadow: `4px 4px 0px ${DARK_TEXT}`
+                    boxShadow: `4px 4px 0px ${DARK_TEXT}`,
                   }}
                 >
                   <span className="text-4xl lg:text-5xl xl:text-6xl font-black" style={{ color: DARK_TEXT }}>
@@ -154,9 +167,10 @@ const PastEvents: React.FC = () => {
                   <span className="font-mono text-xs uppercase font-bold mt-3 text-center" style={{ color: DARK_TEXT }}>
                     {stat.label}
                   </span>
-                </div>
+                </HoverLift>
+                </RevealItem>
               ))}
-            </div>
+            </RevealStagger>
 
           </div>
 

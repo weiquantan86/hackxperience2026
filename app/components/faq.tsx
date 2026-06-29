@@ -1,7 +1,9 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { IBM_Plex_Mono, Montserrat } from "next/font/google";
+import { HoverLift, RevealItem, RevealStagger } from "./ui/motion-ui";
 
 const ibmPlexMono = IBM_Plex_Mono({
   subsets: ["latin"],
@@ -206,6 +208,67 @@ const FAQ_DATA: FaqCategory[] = [
   },
 ];
 
+function FaqAccordionItem({
+  itemKey,
+  question,
+  answer,
+  isOpen,
+  onToggle,
+}: {
+  itemKey: string;
+  question: string;
+  answer: ReactNode;
+  isOpen: boolean;
+  onToggle: () => void;
+}) {
+  const reduceMotion = useReducedMotion();
+
+  return (
+    <HoverLift
+      className="border border-[#d5d0c8] rounded-sm bg-white/40"
+      lift={-3}
+      style={{ boxShadow: isOpen ? "4px 4px 0 0 #c00000" : "none" }}
+    >
+      <button
+        type="button"
+        onClick={onToggle}
+        className="w-full flex items-center justify-between gap-4 px-5 sm:px-6 py-4 sm:py-5 cursor-pointer text-left"
+      >
+        <span className="min-w-0 text-[13px] sm:text-[15px] font-semibold tracking-[0.04em] text-[#1d1c17]">
+          &gt; {question}
+        </span>
+        <motion.svg
+          className="w-5 h-5 flex-shrink-0 text-[#1d1c17]"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+          animate={{ rotate: isOpen ? 180 : 0 }}
+          transition={{ duration: reduceMotion ? 0 : 0.25 }}
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+        </motion.svg>
+      </button>
+
+      <AnimatePresence initial={false}>
+        {isOpen && (
+          <motion.div
+            key={itemKey}
+            initial={reduceMotion ? false : { height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={reduceMotion ? undefined : { height: 0, opacity: 0 }}
+            transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+            className="overflow-hidden"
+          >
+            <div className="px-5 sm:px-6 pb-5 text-[13px] sm:text-[14px] leading-[1.7] text-[#1d1c17]/70 tracking-[0.02em]">
+              {answer}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </HoverLift>
+  );
+}
+
 export default function Faq() {
   const [openKey, setOpenKey] = useState<string | null>(null);
 
@@ -223,46 +286,30 @@ export default function Faq() {
         <div className="flex flex-col gap-10 sm:gap-12">
           {FAQ_DATA.map((category) => (
             <div key={category.label}>
-              <div className="mb-4 sm:mb-5">
-                <span className="text-[11px] sm:text-[12px] font-bold tracking-[0.12em] text-[#c00000] uppercase">
-                  // {category.label}
-                </span>
-              </div>
+              <RevealItem>
+                <div className="mb-4 sm:mb-5">
+                  <span className="text-[11px] sm:text-[12px] font-bold tracking-[0.12em] text-[#c00000] uppercase">
+                    // {category.label}
+                  </span>
+                </div>
+              </RevealItem>
 
-              <div className="flex flex-col gap-3">
+              <RevealStagger className="flex flex-col gap-3" stagger={0.06}>
                 {category.items.map((item, i) => {
                   const key = `${category.label}-${i}`;
                   return (
-                    <div key={key} className="border border-[#d5d0c8] rounded-sm">
-                      <button
-                        type="button"
-                        onClick={() => toggle(key)}
-                        className="w-full flex items-center justify-between gap-4 px-5 sm:px-6 py-4 sm:py-5 cursor-pointer text-left"
-                      >
-                        <span className="min-w-0 text-[13px] sm:text-[15px] font-semibold tracking-[0.04em] text-[#1d1c17]">
-                          &gt; {item.question}
-                        </span>
-                        <svg
-                          className={`w-5 h-5 flex-shrink-0 text-[#1d1c17] transition-transform duration-200 ${
-                            openKey === key ? "rotate-180" : ""
-                          }`}
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                        </svg>
-                      </button>
-
-                      {openKey === key && (
-                        <div className="px-5 sm:px-6 pb-5 text-[13px] sm:text-[14px] leading-[1.7] text-[#1d1c17]/70 tracking-[0.02em]">
-                          {item.answer}
-                        </div>
-                      )}
-                    </div>
+                    <RevealItem key={key}>
+                      <FaqAccordionItem
+                        itemKey={key}
+                        question={item.question}
+                        answer={item.answer}
+                        isOpen={openKey === key}
+                        onToggle={() => toggle(key)}
+                      />
+                    </RevealItem>
                   );
                 })}
-              </div>
+              </RevealStagger>
             </div>
           ))}
         </div>

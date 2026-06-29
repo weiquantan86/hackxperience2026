@@ -1,3 +1,8 @@
+'use client'
+
+import { RevealItem, RevealStagger } from './components/ui/motion-ui'
+import { motion } from 'framer-motion'
+
 const EVENTS = [
   {
     date: '16 JUL 2026',
@@ -175,7 +180,12 @@ function TimelineItem({ date, title, time, meta, isLast }) {
     : null
 
   return (
-    <div className="flex gap-4 sm:gap-8">
+    <RevealItem>
+    <motion.div
+      className="flex gap-4 sm:gap-8"
+      whileHover={{ x: 4 }}
+      transition={{ type: 'spring', stiffness: 400, damping: 28 }}
+    >
       <div className="flex flex-col items-center w-4 flex-shrink-0">
         <div
           className="w-3.5 bg-red-700"
@@ -207,26 +217,35 @@ function TimelineItem({ date, title, time, meta, isLast }) {
           </div>
         )}
       </div>
-    </div>
+    </motion.div>
+    </RevealItem>
   )
 }
 
 function JudgeRow({ name, role, company, bio, linkedin, img, isLast }) {
   return (
-    <div className="flex gap-4 sm:gap-8">
+    <RevealItem>
+    <motion.div
+      className="flex gap-4 sm:gap-8"
+      whileHover={{ x: 4 }}
+      transition={{ type: 'spring', stiffness: 380, damping: 26 }}
+    >
       <div className="flex flex-col items-center w-4 flex-shrink-0">
         <div className="w-3.5 flex-shrink-0 bg-gray-600" style={{ height: 18, clipPath: 'polygon(50% 0%, 100% 35%, 100% 100%, 0% 100%, 0% 35%)' }} />
         {!isLast && <div className="w-0.5 bg-gray-700 flex-1 min-h-20" />}
       </div>
       <div className="flex-1 pb-12 sm:pb-16 pt-1">
         <div className="flex gap-4 sm:gap-8 md:gap-10 items-start">
-          <div className="flex-shrink-0 overflow-hidden bg-gray-800 border border-gray-700 rounded-xl w-16 h-16 sm:w-28 sm:h-28 md:w-36 md:h-36 flex items-center justify-center">
+          <motion.div
+            className="flex-shrink-0 overflow-hidden bg-gray-800 border border-gray-700 rounded-xl w-16 h-16 sm:w-28 sm:h-28 md:w-36 md:h-36 flex items-center justify-center"
+            whileHover={{ scale: 1.04, borderColor: '#c00000' }}
+          >
             {img ? (
               <img src={img} alt={name} className="w-full h-full object-cover" />
             ) : (
               <div className="text-gray-500 text-xs font-mono">IMG</div>
             )}
-          </div>
+          </motion.div>
           <div className="flex-1 min-w-0">
             <Label>{role}</Label>
             <div className="text-white text-lg sm:text-2xl md:text-3xl font-bold tracking-wider font-mono mb-1 leading-tight">{name}</div>
@@ -237,7 +256,8 @@ function JudgeRow({ name, role, company, bio, linkedin, img, isLast }) {
           </div>
         </div>
       </div>
-    </div>
+    </motion.div>
+    </RevealItem>
   )
 }
 
@@ -260,17 +280,19 @@ function SponsorRow({ tier, sponsors }) {
         <Meta>{sub}</Meta>
       </div>
       <div
-        className={`grid gap-5 md:gap-8 ${
+        className={`grid gap-5 md:gap-8 items-stretch ${
           sponsors.length === 1 ? 'grid-cols-1 max-w-2xl' : 'grid-cols-1 sm:grid-cols-2'
         }`}
       >
         {sponsors.map((s, i) => {
+          const goldCardSize =
+            'h-[148px] sm:h-[188px] md:h-[220px] w-full p-8 sm:p-10 md:p-12'
           const card = (
             <div
-              className={`group relative flex items-center justify-center border-2 border-[#d5d0c8] bg-[#f2ede5] transition-all duration-200 hover:border-red-600 hover:shadow-[8px_8px_0_0_#c00000] hover:-translate-y-1 ${
+              className={`group relative flex h-full w-full items-center justify-center border-2 border-[#d5d0c8] bg-[#f2ede5] transition-all duration-200 hover:border-red-600 hover:shadow-[8px_8px_0_0_#c00000] hover:-translate-y-1 ${
                 tier === 'gold'
-                  ? 'min-h-[148px] sm:min-h-[188px] md:min-h-[220px] p-8 sm:p-10 md:p-12'
-                  : 'min-h-[100px] sm:min-h-[120px] p-6 sm:p-8'
+                  ? goldCardSize
+                  : 'h-[100px] sm:h-[120px] w-full p-6 sm:p-8'
               }`}
             >
               <div className="absolute top-2 left-2 w-4 h-4 border-t-2 border-l-2 border-red-600 opacity-50 group-hover:opacity-100 transition-opacity pointer-events-none" />
@@ -291,12 +313,12 @@ function SponsorRow({ tier, sponsors }) {
               href={s.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="block focus:outline-none focus-visible:ring-2 focus-visible:ring-red-600"
+              className="block h-full w-full focus:outline-none focus-visible:ring-2 focus-visible:ring-red-600"
             >
               {card}
             </a>
           ) : (
-            <div key={i}>{card}</div>
+            <div key={i} className="h-full w-full">{card}</div>
           )
         })}
       </div>
@@ -317,7 +339,7 @@ export default function TimeLine() {
           subtitle="// 24–25 JULY 2026 · SIM CAMPUS · FULL SCHEDULE DROPS ONCE LOCKED IN."
         />
 
-        <div className="flex flex-col">
+        <RevealStagger className="flex flex-col" stagger={0.07}>
           {EVENTS.map((event, i) => (
             <TimelineItem
               key={i}
@@ -325,15 +347,15 @@ export default function TimeLine() {
               isLast={i === EVENTS.length - 1}
             />
           ))}
-        </div>
+        </RevealStagger>
 
         <div id="judges">
           <SectionHeader title="JUDGES_AND_MENTORS" subtitle="// INDUSTRY EXPERTS EVALUATING YOUR WORK" />
-          <div className="flex flex-col">
+          <RevealStagger className="flex flex-col" stagger={0.1}>
             {JUDGES.map((judge, i) => (
               <JudgeRow key={judge.name} {...judge} isLast={i === JUDGES.length - 1} />
             ))}
-          </div>
+          </RevealStagger>
         </div>
 
         <SectionHeader title="SPONSORS_AND_PARTNERS" subtitle="// ORGANISATIONS MAKING THIS POSSIBLE" />

@@ -2,20 +2,30 @@
 
 import * as React from "react";
 import { motion, useReducedMotion } from "framer-motion";
+import { BRUTAL_EASE } from "./motion-ui";
 
 interface RevealProps {
   children: React.ReactNode;
   /** Optional stagger delay in seconds. */
   delay?: number;
   className?: string;
+  /** Vertical travel in px */
+  y?: number;
+  /** Subtle scale from value → 1 */
+  scale?: number;
 }
 
 /**
  * Scroll-into-view reveal. Children fade and rise into place the first time
- * they enter the viewport. Honours `prefers-reduced-motion` by rendering the
- * content statically. Kept intentionally subtle to suit the brutalist look.
+ * they enter the viewport. Honours `prefers-reduced-motion`.
  */
-export default function Reveal({ children, delay = 0, className }: RevealProps) {
+export default function Reveal({
+  children,
+  delay = 0,
+  className,
+  y = 36,
+  scale = 0.97,
+}: RevealProps) {
   const reduceMotion = useReducedMotion();
 
   if (reduceMotion) {
@@ -25,10 +35,10 @@ export default function Reveal({ children, delay = 0, className }: RevealProps) 
   return (
     <motion.div
       className={className}
-      initial={{ opacity: 0, y: 32 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: "-80px" }}
-      transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1], delay }}
+      initial={{ opacity: 0, y, scale }}
+      whileInView={{ opacity: 1, y: 0, scale: 1 }}
+      viewport={{ once: true, margin: "-70px" }}
+      transition={{ duration: 0.65, ease: BRUTAL_EASE, delay }}
     >
       {children}
     </motion.div>
