@@ -14,6 +14,7 @@ const montserrat = Montserrat({
 });
 
 import { TEAM_REGISTRATION_URL, LOOKING_FOR_TEAM_URL } from "@/lib/site-links";
+import { MICROSOFT_FOUNDRY_WORKSHOP } from "@/lib/hackathon-pre-events";
 
 const TELEGRAM_URL = "https://t.me/+M4VYyn6OxJY0OGI1";
 
@@ -101,9 +102,9 @@ const FAQ_DATA: FaqCategory[] = [
             There are two pre-events leading up to the main hackathon:
             <ul className="list-disc pl-5 mt-2 space-y-1">
               <li><strong>IT Club Project Showcase</strong> — 15 April 2026, 12PM–4PM @ SIM Student Hub, Blk B Level 1</li>
-              <li><strong>React & Next.js Workshop</strong> — Dates TBA, 7PM–10PM @ SIM Campus</li>
+              <li><strong>Building Agentic AI: Microsoft Foundry Workshop</strong> — 17 July 2026 @ SIM Campus (time TBA)</li>
             </ul>
-            <span className="block mt-2">Join our <TelegramLink /> for date announcements and updates.</span>
+            <span className="block mt-2">Join our <TelegramLink /> for workshop time and registration updates.</span>
           </>
         ),
       },
@@ -112,8 +113,17 @@ const FAQ_DATA: FaqCategory[] = [
         answer: "Our IT Club subcommittees spent months building projects collaboratively. On 15 April, they showcase what they've built. Come get inspiration on what a typical project looks like, and consult with our subcommittees on tech stack, process, tips, and more.",
       },
       {
-        question: "WHAT IS THE REACT & NEXT.JS WORKSHOP ABOUT?",
-        answer: <>A two-part hands-on workshop taught by our trained committee members. It covers React and Next.js — popular, industry-standard development tools — designed to equip you with web development skills and prepare you for the hackathon. Attendees who complete both sessions will receive a free e-Certificate. More details will be announced in our <TelegramLink />.</>,
+        question: "WHAT IS THE MICROSOFT FOUNDRY WORKSHOP ABOUT?",
+        answer: (
+          <>
+            A pre-hackathon workshop on <strong>17 July 2026</strong> covering agentic AI with Microsoft Foundry — including agent fundamentals, Foundry models and workflows, multi-agent design, hands-on agent builds, and responsible AI. Venue at SIM Campus; exact time TBA. Join our <TelegramLink /> for updates.
+            <ul className="list-disc pl-5 mt-2 space-y-1">
+              {MICROSOFT_FOUNDRY_WORKSHOP.topics.map((topic) => (
+                <li key={topic}>{topic}</li>
+              ))}
+            </ul>
+          </>
+        ),
       },
       {
         question: "DO I NEED TO ATTEND THE PRE-EVENTS TO JOIN THE HACKATHON?",
@@ -142,13 +152,21 @@ const FAQ_DATA: FaqCategory[] = [
       },
       {
         question: "HOW WILL PROJECTS BE JUDGED?",
-        answer: "Teams will present their projects to industry judges, followed by the winner announcement at the closing ceremony.",
+        answer: "Teams present to industry judges across track prizes (Care Forward and Friction To Flow), sponsor choice awards, and community voting. See the Prizes section for full breakdown and judging criteria.",
       },
     ],
   },
   {
     label: "GENERAL",
     items: [
+      {
+        question: "WHAT ARE THE PRIZES?",
+        answer: (
+          <>
+            Over $1,800 in prizes — track winners and runner-ups ($300 / $150 each), sponsor awards including Best Use of Microsoft Stack ($700), Best Entrepreneurial Award ($100), Community Choice ($50), and more. See the full breakdown in the <a href="#prizes" className="text-[#c00000] underline underline-offset-2 hover:text-[#a00000]">Prizes section</a>.
+          </>
+        ),
+      },
       {
         question: "WHAT IS HACKXPERIENCE?",
         answer: "HackXperience is SIM IT Club's flagship hackathon — a 2-day agentic hackathon where curious students build and deploy agentic products. In 2025, it brought together 90+ participants across 20 projects and won SIM's Outstanding Event Award (Silver).",

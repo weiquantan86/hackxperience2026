@@ -13,9 +13,11 @@ const ibmPlexMono = IBM_Plex_Mono({
 const NAV_ITEMS = [
   { label: "OVERVIEW", target: "overview" },                 // About
   { label: "TRACKS", target: "tracks" },                     // Tracks
+  { label: "PRIZES", target: "prizes" },                     // Prizes
   { label: "PAST-EVENTS", target: "past-events" },           // Past Events
   { label: "PRE-EVENTS", target: "pre-events" },             // Pre-events
   { label: "TIMELINE", target: "timeline" },                 // Timeline
+  { label: "JUDGES", target: "judges" },                     // Judges
   { label: "FAQ", target: "faq" },                           // FAQ
   { label: "ORGANISE_MEMBERS", target: "organise-members" }, // Committee
   { label: "JOIN_US!", target: "join-us" },                  // Final CTA

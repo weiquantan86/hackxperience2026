@@ -1,5 +1,5 @@
 import { IBM_Plex_Mono, Montserrat } from "next/font/google";
-import { TEAM_REGISTRATION_URL } from "@/lib/site-links";
+import { TEAM_REGISTRATION_URL, LOOKING_FOR_TEAM_URL } from "@/lib/site-links";
 
 const ibmPlexMono = IBM_Plex_Mono({
   subsets: ["latin"],
@@ -52,10 +52,22 @@ export default function TimelineCta() {
             </a>
           )}
 
+          {LOOKING_FOR_TEAM_URL ? (
+            <a
+              href={LOOKING_FOR_TEAM_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-full sm:w-auto border-2 border-white/80 px-10 sm:px-14 py-5 text-[13px] sm:text-[15px] font-bold tracking-[0.12em] uppercase cursor-pointer shadow-[5px_5px_0_0_rgba(255,255,255,0.15)] hover:bg-white/10 active:translate-y-[1px] transition text-center inline-block"
+            >
+              SOLO / PAIR REGISTRATION
+            </a>
+          ) : null}
+
           {/* Right info */}
           <div className="sm:border-l border-white/30 sm:pl-6 text-left">
             <div className="text-[11px] sm:text-[13px] leading-[1.9] font-semibold tracking-[0.10em] uppercase whitespace-nowrap">
               <div>// TEAMS OF 3–4</div>
+              <div>// SOLO / PAIR: 1–2</div>
               <div>// REG CLOSES 16 JUL</div>
               <div>// FREE TO JOIN</div>
             </div>

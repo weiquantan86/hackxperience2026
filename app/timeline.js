@@ -33,28 +33,28 @@ const EVENTS = [
 
 const JUDGES = [
   {
-    name: 'JUDGE NAME',
-    role: 'CHIEF TECHNOLOGY OFFICER',
-    company: 'COMPANY NAME',
-    bio: 'Industry leader with 10+ years building scalable systems. Passionate about AI and developer tooling.',
-    linkedin: '#',
-    img: null,
+    name: 'VINCENT CHOY',
+    role: 'SENIOR CLOUD CONSULTANT',
+    company: 'FEDELELIS · MICROSOFT MVP',
+    bio: 'Microsoft MVP for Microsoft 365 and Copilot, honored every year since 2014. Global judge and mentor for the Microsoft Imagine Cup. Frequent international speaker on security and digital transformation, passionate about guiding students to turn bold ideas into lasting impact.',
+    linkedin: 'https://www.linkedin.com/in/office365mvp/',
+    img: '/judges/vincent-choy.png',
   },
   {
-    name: 'JUDGE NAME',
-    role: 'SENIOR ENGINEER',
-    company: 'COMPANY NAME',
-    bio: 'Full-stack engineer and open source contributor. Specialises in distributed systems and cloud architecture.',
-    linkedin: '#',
-    img: null,
+    name: 'RICHARD LEE',
+    role: 'CHIEF ARCHITECT',
+    company: 'INTELWAVE AI',
+    bio: 'Leads a team architecting and scaling agentic systems at IntelWave AI. AWS AI Engineering Community Builder and Y Combinator hackathon alum. Speaker at Amazon, Tencent, Stripe, SMU, and ClawCon; contributor to CNBC and The Business Times. Has judged Agora, Hack&Roll, and TinyFish.',
+    linkedin: 'https://www.linkedin.com/in/yaksheng/',
+    img: '/judges/richard-lee.png',
   },
   {
-    name: 'JUDGE NAME',
-    role: 'PRODUCT MANAGER',
-    company: 'COMPANY NAME',
-    bio: 'Led product at multiple startups from zero to scale. Focused on developer experience and growth.',
-    linkedin: '#',
-    img: null,
+    name: 'CHER LIM',
+    role: 'AI EDUCATOR',
+    company: 'SIM GLOBAL EDUCATION · WINE TREASURES',
+    bio: 'Educator at SIM Global Education teaching AI and machine learning across partner-university programs — deep learning, ML algorithm development, data visualization, and AI project modules. Teaching Excellence Award 2025 and 15-Year Lecturer Service Award recipient at SIM.',
+    linkedin: 'https://www.linkedin.com/in/cher-l-812959/',
+    img: '/judges/cher-lim.png',
   },
 ]
 
@@ -298,14 +298,18 @@ export default function TimeLine() {
           ))}
         </div>
 
-        {/* <SectionHeader title="JUDGES_AND_MENTORS" subtitle="// INDUSTRY EXPERTS EVALUATING YOUR WORK" />
-        <div className="flex flex-col">
-          {JUDGES.map((judge, i) => (
-            <JudgeRow key={i} {...judge} isLast={i === JUDGES.length - 1} />
-          ))}
+        <div className="w-full h-px bg-red-700 mt-12 sm:mt-16 mb-8 sm:mb-12" />
+
+        <div id="judges">
+          <SectionHeader title="JUDGES_AND_MENTORS" subtitle="// INDUSTRY EXPERTS EVALUATING YOUR WORK" />
+          <div className="flex flex-col">
+            {JUDGES.map((judge, i) => (
+              <JudgeRow key={judge.name} {...judge} isLast={i === JUDGES.length - 1} />
+            ))}
+          </div>
         </div>
 
-        <SectionHeader title="SPONSORS_AND_PARTNERS" subtitle="// ORGANISATIONS MAKING THIS POSSIBLE" />
+        {/* <SectionHeader title="SPONSORS_AND_PARTNERS" subtitle="// ORGANISATIONS MAKING THIS POSSIBLE" />
         {gold.length   > 0 && <SponsorRow tier="gold"   sponsors={gold}   />}
         {silver.length > 0 && <SponsorRow tier="silver" sponsors={silver} />}
         {bronze.length > 0 && <SponsorRow tier="bronze" sponsors={bronze} />} */}
