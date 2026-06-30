@@ -180,7 +180,7 @@ function buildFaqData(): FaqCategory[] {
         question: "HOW WILL PROJECTS BE JUDGED?",
         answer: REVEAL_TRACKS_AND_JUDGES
           ? "Teams present in a showcase format: 7 minutes pitch plus 3 minutes Q&A per team. Industry judges evaluate track prizes (Care Forward and Friction To Flow), sponsor choice awards, and community voting on the HackXperience voting page. See the Prizes section for the full prize breakdown."
-          : "Teams present in a showcase format: 7 minutes pitch plus 3 minutes Q&A per team. Industry judges evaluate sponsor choice awards and community voting on the HackXperience voting page. The judging panel will be revealed at the pre-event. See the Prizes section for the full prize breakdown.",
+          : "Teams present in a showcase format: 7 minutes pitch plus 3 minutes Q&A per team. Industry judges evaluate track prizes, sponsor choice awards, and community voting on the HackXperience voting page. See the Prizes section for the full prize breakdown.",
       },
     ],
   },
@@ -191,11 +191,11 @@ function buildFaqData(): FaqCategory[] {
         question: "WHAT ARE THE PRIZES?",
         answer: REVEAL_TRACKS_AND_JUDGES ? (
           <>
-            Prize pool {PRIZE_POOL_WORTH} (all amounts in SGD, including cash and vouchers): track winners and runner-ups (S$300 / S$150 each), sponsor awards including Best Use of Microsoft Stack (S$700), Best Entrepreneurial Award (S$100), Community Choice (S$50), and an informal Game Prize (S$50, details TBC). See the full breakdown in the <a href="#prizes" className="text-[#c00000] underline underline-offset-2 hover:text-[#a00000]">Prizes section</a>.
+            Prize pool {PRIZE_POOL_WORTH} (all amounts in SGD): track winners and runner-ups (S$300 / S$150 each), sponsor awards including Best Use of Microsoft Stack (S$700), Best Entrepreneurial Award (S$100), Community Choice (S$50), and an informal Game Prize (S$50, details TBC). See the full breakdown in the <a href="#prizes" className="text-[#c00000] underline underline-offset-2 hover:text-[#a00000]">Prizes section</a>.
           </>
         ) : (
           <>
-            Prize pool {PRIZE_POOL_WORTH} (all amounts in SGD, including cash and vouchers): track winners and runner-ups (S$300 / S$150 each per track), sponsor awards including Best Use of Microsoft Stack (S$700), Best Entrepreneurial Award (S$100), Community Choice (S$50), and an informal Game Prize (S$50, details TBC). Track names revealed at the pre-event. See the full breakdown in the <a href="#prizes" className="text-[#c00000] underline underline-offset-2 hover:text-[#a00000]">Prizes section</a>.
+            Prize pool {PRIZE_POOL_WORTH} (all amounts in SGD): track winners and runner-ups (S$300 / S$150 each per track), sponsor awards including Best Use of Microsoft Stack (S$700), Best Entrepreneurial Award (S$100), Community Choice (S$50), and an informal Game Prize (S$50, details TBC). Track names revealed at the pre-event. See the full breakdown in the <a href="#prizes" className="text-[#c00000] underline underline-offset-2 hover:text-[#a00000]">Prizes section</a>.
           </>
         ),
       },

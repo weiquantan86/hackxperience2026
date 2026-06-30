@@ -100,7 +100,7 @@ export const HACKATHON_PRIZES: readonly PrizeAward[] = [
 
 export const PRIZE_POOL_TOTAL = "S$1,800";
 export const PRIZE_POOL_WORTH = `worth ${PRIZE_POOL_TOTAL}`;
-export const PRIZE_CURRENCY_NOTE = "All prize amounts are in SGD; includes cash and vouchers.";
+export const PRIZE_CURRENCY_NOTE = "All prize amounts are in SGD.";
 
 /** Landing-page display before track names are revealed at pre-event. */
 const LANDING_TRACK_PRIZE_COPY: Record<
