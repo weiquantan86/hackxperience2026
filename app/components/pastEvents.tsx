@@ -50,22 +50,18 @@ const PastEvents: React.FC = () => {
   };
 
   const current = eventData[activeYear];
-
-  // Reset to the first image when the year tab is changed
-  useEffect(() => {
-    setCurrentImageIndex(0);
-  }, [activeYear]);
+  const totalImages = current.imgs.length;
 
   // Carousel Timer Effect
   useEffect(() => {
     const timer = setTimeout(() => {
       setCurrentImageIndex((prevIndex) => 
-        (prevIndex + 1) % eventData[activeYear].imgs.length
+        (prevIndex + 1) % totalImages
       );
     }, 3000);
 
     return () => clearTimeout(timer);
-  }, [currentImageIndex, activeYear]);
+  }, [currentImageIndex, totalImages]);
 
   return (
     <div id="past-events" className="scroll-mt-11">
@@ -85,7 +81,10 @@ const PastEvents: React.FC = () => {
           {(['2025', '2024'] as const).map((year) => (
             <motion.button
               key={year}
-              onClick={() => setActiveYear(year)}
+              onClick={() => {
+                setActiveYear(year);
+                setCurrentImageIndex(0);
+              }}
               className="px-8 py-2 font-mono text-sm uppercase font-bold border-2 rounded-full whitespace-nowrap"
               style={{
                 borderColor: DARK_TEXT,
@@ -180,24 +179,6 @@ const PastEvents: React.FC = () => {
                 {current.tag}
               </div>
 
-              {/* View Projects CTA — only 2025 has an archived project gallery */}
-              {activeYear === '2025' && (
-                <div className="pt-2">
-                  <a href="/gallery?year=2025" className="inline-block">
-                    <button
-                      className="flex items-center gap-2 px-8 py-3 font-black uppercase text-xs tracking-widest transition-transform active:translate-y-1"
-                      style={{
-                        backgroundColor: RED,
-                        color: WHITE,
-                        boxShadow: `4px 4px 0px ${DARK_TEXT}`,
-                      }}
-                    >
-                      View Projects
-                      <span aria-hidden>&rarr;</span>
-                    </button>
-                  </a>
-                </div>
-              )}
             </div>
             
             <div className="w-full md:w-[60%]">
