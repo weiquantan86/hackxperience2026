@@ -37,8 +37,8 @@ const PHOTO_FRAMES = {
 } as const;
 
 function LinkedInButton({ member }: { member: Member }) {
-  const href = member.linkedinUrl?.trim() || "#";
-  const isExternal = href !== "#";
+  const href = member.linkedinUrl?.trim();
+  if (!href) return null;
 
   return (
     <div
@@ -47,8 +47,8 @@ function LinkedInButton({ member }: { member: Member }) {
     >
       <a
         href={href}
-        target={isExternal ? "_blank" : undefined}
-        rel={isExternal ? "noopener noreferrer" : undefined}
+        target="_blank"
+        rel="noopener noreferrer"
         className="w-[2rem] h-[2rem] sm:w-[2.2rem] sm:h-[2.2rem] bg-[#f2ede5] rounded-full flex justify-center items-center relative z-10 border-[1.5px] border-[#1d1c17] overflow-hidden group shadow-md"
         aria-label={`${member.name} LinkedIn`}
       >
