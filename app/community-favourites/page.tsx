@@ -24,7 +24,7 @@ const bodyFont = Montserrat({
 const RED = "#c00000";
 const WHITE = "#ffffff";
 const REFRESH_INTERVAL_MS = 12000;
-const COUNTDOWN_TARGET_MS = new Date("2026-07-25T16:30:00+08:00").getTime();
+const COUNTDOWN_TARGET_MS = new Date("2026-07-25T16:00:00+08:00").getTime();
 
 function formatCountdown(milliseconds: number) {
   const totalSeconds = Math.max(0, Math.ceil(milliseconds / 1000));
