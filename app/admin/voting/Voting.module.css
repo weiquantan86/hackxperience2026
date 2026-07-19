@@ -383,6 +383,30 @@
   box-shadow: 3px 3px 0 0 #cc0000;
 }
 
+.projectThumbWrap {
+  margin-bottom: 12px;
+}
+
+.projectThumb {
+  width: 100%;
+  height: 120px;
+  border: 1px solid rgba(29, 28, 23, 0.14);
+  background-color: #ebe4d7;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+}
+
+.projectThumbPlaceholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #7a7669;
+  font-size: 11px;
+  line-height: 16px;
+  letter-spacing: 0.08em;
+}
+
 .projectCardTop {
   display: flex;
   align-items: center;

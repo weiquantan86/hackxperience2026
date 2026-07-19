@@ -512,6 +512,20 @@ export default function VotingClient() {
                                 onClick={() => toggleVote(team.submissionId)}
                                 disabled={locked}
                               >
+                                <div className={styles.projectThumbWrap}>
+                                  {team.thumbnailUrl ? (
+                                    <div
+                                      className={styles.projectThumb}
+                                      style={{
+                                        backgroundImage: `url(${team.thumbnailUrl})`,
+                                      }}
+                                    />
+                                  ) : (
+                                    <div className={`${styles.projectThumb} ${styles.projectThumbPlaceholder}`}>
+                                      NO IMAGE
+                                    </div>
+                                  )}
+                                </div>
                                 <div className={styles.projectCardTop}>
                                   <span className={styles.projectTeam}>{team.teamId}</span>
                                   <span className={styles.projectCheck}>{selected ? "[x]" : "[ ]"}</span>
