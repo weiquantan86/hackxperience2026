@@ -110,6 +110,13 @@
   border-bottom: 1px solid #cc0000;
 }
 
+.cardTopRow {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
 .stepBadge {
   display: inline-flex;
   padding: 4px 8px;
@@ -551,6 +558,10 @@
 
 @media (max-width: 720px) {
   .contentHeader {
+    flex-direction: column;
+  }
+
+  .cardTopRow {
     flex-direction: column;
   }
 

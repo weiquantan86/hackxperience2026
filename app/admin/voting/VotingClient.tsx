@@ -36,6 +36,10 @@ function formatBallotDate(value: string) {
   });
 }
 
+function buildVoterNamesExport(ballots: CommunityVotingBallot[]) {
+  return ballots.map((ballot) => ballot.voterName).join("\n");
+}
+
 function buildMetrics(
   teams: CommunityVotingTeamPayload[],
   leaderboard: CommunityVotingLeaderboardEntry[],
@@ -192,6 +196,21 @@ export default function VotingClient() {
     setDropdownOpen(false);
   }
 
+  function handleExportVoterNames() {
+    const content = buildVoterNamesExport(ballots);
+    if (!content) return;
+
+    const file = new Blob([content], { type: "text/plain;charset=utf-8" });
+    const downloadUrl = window.URL.createObjectURL(file);
+    const link = document.createElement("a");
+    link.href = downloadUrl;
+    link.download = "community-voter-names.txt";
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.URL.revokeObjectURL(downloadUrl);
+  }
+
   function handleSelectTeam(team: CommunityVotingTeamPayload) {
     setSelectedTeamId(team.teamId);
     setTeamInput(team.teamId);
@@ -314,11 +333,23 @@ export default function VotingClient() {
             {mode === "admin" ? (
               <>
                 <div className={styles.cardTop}>
-                  <span className={styles.stepBadge}>ADMIN VIEW</span>
-                  <h3 className={styles.cardTitle}>Community vote log</h3>
-                  <p className={styles.cardSubtitle}>
-                    Each ballot shows who voted, which team they came from, and the 3 approved teams they selected.
-                  </p>
+                  <div className={styles.cardTopRow}>
+                    <div>
+                      <span className={styles.stepBadge}>ADMIN VIEW</span>
+                      <h3 className={styles.cardTitle}>Community vote log</h3>
+                      <p className={styles.cardSubtitle}>
+                        Each ballot shows who voted, which team they came from, and the 3 approved teams they selected.
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      className={styles.secondaryButton}
+                      onClick={handleExportVoterNames}
+                      disabled={ballots.length === 0}
+                    >
+                      EXPORT VOTER NAMES
+                    </button>
+                  </div>
                 </div>
 
                 {loading ? (
