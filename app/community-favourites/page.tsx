@@ -144,19 +144,27 @@ export default function CommunityFavouritesPage() {
             >
               <div className="flex items-end justify-center gap-3 md:gap-6">
                 {podiumDisplay.map((entry) => {
+                  const isLeader = entry.rank === 1;
+                  const isSecond = entry.rank === 2;
                   const heightClass =
-                    entry.rank === 1
+                    isLeader
                       ? "h-[21rem] md:h-[24rem]"
-                      : entry.rank === 2
-                        ? "h-[16rem] md:h-[19rem]"
-                        : "h-[14.5rem] md:h-[17rem]";
+                      : isSecond
+                        ? "h-[17rem] md:h-[19.5rem]"
+                        : "h-[15.75rem] md:h-[18rem]";
                   const glowColor =
-                    entry.rank === 1
+                    isLeader
                       ? "0 0 30px rgba(255,214,10,0.28)"
-                      : entry.rank === 2
+                      : isSecond
                         ? "0 0 24px rgba(210,214,227,0.22)"
                         : "0 0 24px rgba(255,140,58,0.22)";
-                  const accent = entry.rank === 1 ? "#ffd60a" : entry.rank === 2 ? "#d2d6e3" : "#ff8c3a";
+                  const accent = isLeader ? "#ffd60a" : isSecond ? "#d2d6e3" : "#ff8c3a";
+                  const contentClass = isLeader ? "px-3 pb-5 pt-4 md:px-5" : "px-2 pb-3 pt-3 md:px-4 md:pb-4";
+                  const thumbClass = isLeader ? "mb-3 h-14 w-14 md:h-16 md:w-16" : "mb-2 h-10 w-10 md:h-12 md:w-12";
+                  const teamHeadingClass = isLeader ? "mt-2 text-lg md:text-2xl" : "mt-1 text-sm md:text-lg";
+                  const voteValueClass = isLeader ? "text-4xl md:text-5xl" : "text-3xl md:text-4xl";
+                  const rankValueClass = isLeader ? "mt-3 text-2xl md:text-3xl" : "mt-2 text-xl md:text-2xl";
+                  const votesLabelClass = isLeader ? "mt-1 text-[11px]" : "mt-1 text-[10px]";
 
                   return (
                     <article
@@ -194,11 +202,11 @@ export default function CommunityFavouritesPage() {
                           background: `linear-gradient(180deg, transparent 0%, ${accent}35 100%)`,
                         }}
                       />
-                      <div className="relative z-10 flex h-full flex-col justify-between px-3 pb-5 pt-4 text-center md:px-5">
+                      <div className={`relative z-10 flex h-full flex-col justify-between text-center ${contentClass}`}>
                         <div className="mx-auto">
                           {entry.thumbnailUrl ? (
                             <div
-                              className="mx-auto mb-3 h-14 w-14 overflow-hidden rounded-xl border md:h-16 md:w-16"
+                              className={`mx-auto overflow-hidden rounded-xl border ${thumbClass}`}
                               style={{
                                 borderColor: "rgba(255,255,255,0.22)",
                                 backgroundImage: `url(${entry.thumbnailUrl})`,
@@ -211,19 +219,19 @@ export default function CommunityFavouritesPage() {
                           <p className={`${monoFont.className} text-[10px] uppercase tracking-[0.16em] text-white/70`}>
                             TEAM
                           </p>
-                          <h2 className={`${bodyFont.className} mt-2 line-clamp-2 text-lg font-semibold text-white md:text-2xl`}>
+                          <h2 className={`${bodyFont.className} line-clamp-2 font-semibold leading-tight text-white ${teamHeadingClass}`}>
                             {entry.teamId}
                           </h2>
                         </div>
 
                         <div>
-                          <p className={`${displayFont.className} text-4xl leading-none md:text-5xl`} style={{ color: accent }}>
+                          <p className={`${displayFont.className} leading-none ${voteValueClass}`} style={{ color: accent }}>
                             {entry.voteCount}
                           </p>
-                          <p className={`${monoFont.className} mt-1 text-[11px] uppercase tracking-[0.16em] text-white/65`}>
+                          <p className={`${monoFont.className} uppercase tracking-[0.16em] text-white/65 ${votesLabelClass}`}>
                             VOTES
                           </p>
-                          <p className={`${displayFont.className} mt-3 text-2xl leading-none md:text-3xl`} style={{ color: accent }}>
+                          <p className={`${displayFont.className} leading-none ${rankValueClass}`} style={{ color: accent }}>
                             #{entry.rank}
                           </p>
                         </div>

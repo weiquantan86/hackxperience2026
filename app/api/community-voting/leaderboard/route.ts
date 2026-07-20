@@ -1,4 +1,6 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+import { readSessionFromCookies } from "@/lib/auth/session";
+import { isCommunityLeaderboardLive } from "@/lib/community-voting-release";
 import { buildLeaderboard, isMissingRelationError, mapApprovedSubmissionToVotingTeam } from "@/lib/server/community-voting";
 import { supabaseServer } from "@/lib/supabase-server";
 import type { SubmissionRow } from "@/lib/types";
@@ -10,7 +12,17 @@ type VoteEntryRow = {
 
 export const dynamic = "force-dynamic";
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const session = readSessionFromCookies(request.cookies);
+  const hasEarlyAccess = session?.role === "admin" || session?.role === "kiosk";
+
+  if (!isCommunityLeaderboardLive() && !hasEarlyAccess) {
+    return NextResponse.json(
+      { error: "Community favourites leaderboard opens on 25 Jul 2026, 12:00 PM SGT." },
+      { status: 403 },
+    );
+  }
+
   const [submissionsResult, entriesResult] = await Promise.all([
     supabaseServer
       .from("submissions")
