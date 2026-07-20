@@ -75,7 +75,9 @@ DROP POLICY IF EXISTS "Public can update by token" ON submissions;
 --
 -- The view runs with its owner's privileges (it is NOT security_invoker), so it
 -- can read the base table even though anon has no direct access to it.
-CREATE OR REPLACE VIEW public_projects AS
+CREATE OR REPLACE VIEW public_projects
+WITH (security_invoker = on)
+AS
   SELECT
     id,
     project_name,
